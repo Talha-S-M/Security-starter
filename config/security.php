@@ -1,0 +1,264 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Mode
+    |--------------------------------------------------------------------------
+    |
+    | web     — session-based browser apps only (default)
+    | api     — Sanctum / token-based API only
+    | hybrid  — both web and API; context is detected per request
+    |
+    */
+
+    'mode' => env('SECURITY_MODE', 'web'),
+
+    'guard' => env('SECURITY_GUARD', 'web'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | API / Sanctum
+    |--------------------------------------------------------------------------
+    |
+    | Enable by setting SECURITY_MODE=api or hybrid. Requires laravel/sanctum.
+    |
+    */
+
+    'api' => [
+        'guard' => env('SECURITY_API_GUARD', 'sanctum'),
+        'middleware_group' => env('SECURITY_API_MIDDLEWARE_GROUP', 'api'),
+        'path_prefix' => env('SECURITY_API_PATH_PREFIX', 'api/security'),
+        'route_name_prefix' => env('SECURITY_API_ROUTE_NAME_PREFIX', 'security.api.'),
+        'auto_apply_middleware' => (bool) env('SECURITY_API_AUTO_MIDDLEWARE', true),
+        'token_idle_timeout_minutes' => (int) env('SECURITY_API_TOKEN_IDLE_MINUTES', 0),
+        'token_mfa_verified_ttl_days' => (int) env('SECURITY_API_MFA_TTL_DAYS', 30),
+        'revoke_token_on_violation' => (bool) env('SECURITY_API_REVOKE_ON_VIOLATION', true),
+        'allowed_route_names' => [
+            'security.api.password.status',
+            'security.api.password.update',
+            'security.api.mfa.status',
+            'security.api.mfa.verify',
+            'security.api.mfa.resend',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Route Prefix & Names
+    |--------------------------------------------------------------------------
+    |
+    | All package routes are prefixed to avoid conflicts with host applications.
+    | Example: /security/password/expired → route('security.password.expired')
+    |
+    */
+
+    'routes' => [
+        'prefix' => env('SECURITY_ROUTE_PREFIX', 'security'),
+        'name_prefix' => env('SECURITY_ROUTE_NAME_PREFIX', 'security.'),
+        'after_mfa_redirect' => env('SECURITY_AFTER_MFA_REDIRECT', '/'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Model
+    |--------------------------------------------------------------------------
+    */
+
+    'user' => [
+        'model' => env('SECURITY_USER_MODEL', 'App\\Models\\User'),
+        'table' => env('SECURITY_USER_TABLE', 'users'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Policy
+    |--------------------------------------------------------------------------
+    */
+
+    'password' => [
+        'min_length' => (int) env('SECURITY_PASSWORD_MIN_LENGTH', 12),
+        'require_uppercase' => true,
+        'require_lowercase' => true,
+        'require_numbers' => true,
+        'require_symbols' => true,
+        'history_count' => (int) env('SECURITY_PASSWORD_HISTORY', 3),
+
+        /*
+        | Optional models that track password reuse history (in addition to
+        | authenticated users using HasPitbSecurity / HasPasswordHistory).
+        |
+        | Example: \App\Models\Client::class
+        */
+        'history_models' => [
+            //
+        ],
+
+        'expiry_days' => (int) env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
+        'allowed_routes' => [
+            'security.password.expired',
+            'security.password.update',
+            'security.password.update.submit',
+            'logout',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Account Lockout
+    |--------------------------------------------------------------------------
+    */
+
+    'lockout' => [
+        'max_attempts' => (int) env('SECURITY_LOCKOUT_ATTEMPTS', 5),
+        'decay_minutes' => (int) env('SECURITY_LOCKOUT_MINUTES', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session Management
+    |--------------------------------------------------------------------------
+    */
+
+    'session' => [
+        'idle_timeout_minutes' => (int) env('SECURITY_SESSION_IDLE_MINUTES', 20),
+        'allowed_routes' => [
+            'login',
+            'logout',
+            'security.mfa.verify',
+            'security.mfa.verify.submit',
+            'security.mfa.resend',
+            'security.password.expired',
+            'security.password.update',
+            'security.password.update.submit',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inactive Accounts
+    |--------------------------------------------------------------------------
+    */
+
+    'inactive_accounts' => [
+        'disable_after_days' => (int) env('SECURITY_INACTIVE_DAYS', 60),
+        'notify_before_days' => (int) env('SECURITY_INACTIVE_NOTIFY_DAYS', 7),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Multi-Factor Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    'mfa' => [
+        'enabled' => (bool) env('SECURITY_MFA_ENABLED', false),
+        'otp_length' => (int) env('SECURITY_MFA_OTP_LENGTH', 6),
+        'otp_expiry_minutes' => (int) env('SECURITY_MFA_OTP_EXPIRY', 5),
+        'allowed_routes' => [
+            'security.mfa.verify',
+            'security.mfa.verify.submit',
+            'security.mfa.resend',
+            'logout',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | CAPTCHA
+    |--------------------------------------------------------------------------
+    */
+
+    'captcha' => [
+        'enabled' => (bool) env('SECURITY_CAPTCHA_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auditing Driver
+    |--------------------------------------------------------------------------
+    |
+    | activitylog — lightweight, logs key security events only (Spatie).
+    | auditing    — full model change history (Owen-It).
+    | none        — package security_events table only.
+    |
+    */
+
+    'auditing' => [
+        'driver' => env('SECURITY_AUDIT_DRIVER', 'activitylog'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authorization (Spatie Permission)
+    |--------------------------------------------------------------------------
+    */
+
+    'permissions' => [
+        'enabled' => (bool) env('SECURITY_PERMISSIONS_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Log Retention
+    |--------------------------------------------------------------------------
+    */
+
+    'logging' => [
+        'retention_months' => (int) env('SECURITY_LOG_RETENTION_MONTHS', 12),
+        'minimum_retention_months' => (int) env('SECURITY_LOG_MIN_RETENTION_MONTHS', 3),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Manual Review Notifications
+    |--------------------------------------------------------------------------
+    */
+
+    'notifications' => [
+        'mail_to' => array_filter(explode(',', env('SECURITY_MAIL_TO', ''))),
+        'access_review' => [
+            'enabled' => true,
+            'interval_months' => (int) env('SECURITY_ACCESS_REVIEW_MONTHS', 6),
+            'reminder_cron' => env('SECURITY_ACCESS_REVIEW_CRON', '0 9 1 */6 *'),
+        ],
+        'log_review' => [
+            'enabled' => true,
+            'reminder_cron' => env('SECURITY_LOG_REVIEW_CRON', '0 8 * * *'),
+        ],
+        'inactive_accounts' => [
+            'enabled' => true,
+            'reminder_cron' => env('SECURITY_INACTIVE_CRON', '0 7 * * 1'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | HTTPS
+    |--------------------------------------------------------------------------
+    */
+
+    'https' => [
+        'force' => (bool) env('SECURITY_FORCE_HTTPS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Middleware
+    |--------------------------------------------------------------------------
+    */
+
+    'middleware' => [
+        'auto_apply_web' => (bool) env('SECURITY_AUTO_MIDDLEWARE', true),
+        'aliases' => [
+            'security.account' => \Pitbphp\Security\Middleware\CheckAccountStatus::class,
+            'security.password' => \Pitbphp\Security\Middleware\EnforcePasswordExpiry::class,
+            'security.session' => \Pitbphp\Security\Middleware\EnforceSessionTimeout::class,
+            'security.token' => \Pitbphp\Security\Middleware\EnforceTokenTimeout::class,
+            'security.mfa' => \Pitbphp\Security\Middleware\RequireMfa::class,
+            'security.https' => \Pitbphp\Security\Middleware\ForceHttps::class,
+        ],
+    ],
+
+];
