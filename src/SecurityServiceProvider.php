@@ -112,7 +112,9 @@ class SecurityServiceProvider extends ServiceProvider
 
         ], 'security-views');
 
-
+        $this->publishes([
+            __DIR__.'/../database/migrations' => database_path('migrations/pitb_security'),
+        ], 'security-migrations');
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 

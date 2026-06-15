@@ -8,21 +8,20 @@ Laravel package implementing PITB Application Security Procedure controls.
 composer require pitbphp/security-starter
 ```
 
-Composer will prompt you to choose an auditing library during install:
-
-| Choice | Package | Best for |
-|--------|---------|----------|
-| **activitylog** | spatie/laravel-activitylog | Standard apps — key security events only |
-| **auditing** | owen-it/laravel-auditing | High-sensitivity apps — full model change history |
-| **none** | — | `security_events` table only |
-
-If you skipped the prompt or used `--no-interaction`, run:
+Composer will show a message after install. Complete setup with a single command:
 
 ```bash
 php artisan security:install
 ```
 
-This publishes config, optional views, sets `SECURITY_AUDIT_DRIVER`, installs the chosen package, and runs migrations.
+This will (once):
+
+1. Ask which auditing library to use (`activitylog`, `auditing`, or `none`)
+2. Install the matching Composer package with a Laravel-compatible version
+3. Publish config, views, and migrations
+4. Run package migrations
+
+Use `--driver=activitylog` to skip the prompt, or `--skip-composer` if you install auditing packages yourself.
 
 ### Publish customizable views
 
@@ -31,6 +30,13 @@ php artisan vendor:publish --tag=security-views
 ```
 
 Views are copied to `resources/views/vendor/security/` where you can edit them freely.
+
+### Publish migrations manually
+
+```bash
+php artisan vendor:publish --tag=security-migrations
+php artisan migrate --path=database/migrations/pitb_security --realpath
+```
 
 ## User model
 
