@@ -6,10 +6,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use Pitbphp\Security\Models\AccessRequest;
+use Pitbphp\Security\Services\AccessProvisioningService;
 use Pitbphp\Security\Support\SecurityRoutes;
 
 class UserManagementController extends Controller
 {
+    public function __construct(
+        protected AccessProvisioningService $provisioning
+    ) {}
+
     public function index(Request $request): View
     {
         $model = config('security.user.model');
@@ -31,7 +37,7 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function edit(int $user): View
+    public function edit(Request $request, int $user): View
     {
         $model = config('security.user.model');
         $record = (new $model)->newQuery()->findOrFail($user);
@@ -39,6 +45,7 @@ class UserManagementController extends Controller
         return view('security::admin.partials.user-form', [
             'user' => $record,
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
+            'requiresApproval' => $this->provisioning->requiresApproval($request->user()),
         ]);
     }
 
@@ -53,6 +60,7 @@ class UserManagementController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'access_expires_at' => ['nullable', 'date'],
             'must_change_password' => ['nullable', 'boolean'],
+            'justification' => ['nullable', 'string', 'max:1000'],
         ]);
 
         if ($request->user()->cannot('roles.manage')) {
@@ -67,30 +75,78 @@ class UserManagementController extends Controller
             return back()->withErrors(['email' => 'You are not allowed to update this user.']);
         }
 
-        if (array_key_exists('roles', $validated) && method_exists($record, 'syncRoles')) {
-            $record->syncRoles($validated['roles'] ?? []);
+        if (isset($validated['roles'])
+            && method_exists($request->user(), 'hasRole')
+            && ! $request->user()->hasRole('super-admin')
+            && in_array('super-admin', $validated['roles'], true)) {
+            return back()->withErrors(['roles' => 'Only a super-admin may assign the super-admin role.']);
         }
 
-        $updates = [];
+        $payload = $this->buildUserPayload($request, $validated);
 
-        if (array_key_exists('is_active', $validated)) {
-            $updates['is_active'] = $request->boolean('is_active');
+        if ($payload === []) {
+            return back()->with('status', 'No changes to save.');
         }
 
-        if ($request->has('access_expires_at')) {
-            $updates['access_expires_at'] = $validated['access_expires_at'] ?? null;
+        if ($this->provisioning->requiresApproval($request->user())) {
+            $request->validate(['justification' => ['required', 'string', 'max:1000']]);
+
+            $this->provisioning->submit(
+                $request->user(),
+                AccessRequest::TYPE_USER_UPDATE,
+                config('security.user.model'),
+                (int) $record->getKey(),
+                $payload,
+                $validated['justification'] ?? null
+            );
+
+            return redirect()
+                ->route(SecurityRoutes::adminName('partials.users'))
+                ->with('status', 'Changes submitted for super-admin approval.');
         }
 
-        if (array_key_exists('must_change_password', $validated)) {
-            $updates['must_change_password'] = $request->boolean('must_change_password');
-        }
-
-        if ($updates !== []) {
-            $record->update($updates);
-        }
+        $this->applyUserChanges($record, $payload);
 
         return redirect()
             ->route(SecurityRoutes::adminName('partials.users'))
             ->with('status', 'User updated successfully.');
+    }
+
+    protected function buildUserPayload(Request $request, array $validated): array
+    {
+        $payload = [];
+
+        if (array_key_exists('roles', $validated)) {
+            $payload['roles'] = $validated['roles'] ?? [];
+        }
+
+        if (array_key_exists('is_active', $validated)) {
+            $payload['is_active'] = $request->boolean('is_active');
+        }
+
+        if ($request->has('access_expires_at')) {
+            $payload['access_expires_at'] = $validated['access_expires_at'] ?? null;
+        }
+
+        if (array_key_exists('must_change_password', $validated)) {
+            $payload['must_change_password'] = $request->boolean('must_change_password');
+        }
+
+        return $payload;
+    }
+
+    protected function applyUserChanges($record, array $payload): void
+    {
+        if (isset($payload['roles']) && method_exists($record, 'syncRoles')) {
+            $record->syncRoles($payload['roles']);
+        }
+
+        $updates = array_intersect_key($payload, array_flip([
+            'is_active', 'access_expires_at', 'must_change_password',
+        ]));
+
+        if ($updates !== []) {
+            $record->update($updates);
+        }
     }
 }

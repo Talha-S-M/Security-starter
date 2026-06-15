@@ -16,5 +16,8 @@
         @can('permissions.view')
             <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.permissions')) }}">Permissions</a>
         @endcan
+        @canany(['access-requests.view', 'access-requests.approve'])
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Access requests</a>
+        @endcanany
     </nav>
 </div>

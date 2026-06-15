@@ -155,6 +155,8 @@ Each partial has a route that returns ready-to-embed HTML:
 | Roles table | `security.admin.partials.roles` | `/security/admin/partials/roles` |
 | Role form | `security.admin.partials.roles.edit` | `/security/admin/partials/roles/{id}/edit` |
 | Permissions | `security.admin.partials.permissions` | `/security/admin/partials/permissions` |
+| Access requests | `security.admin.partials.access-requests` | `/security/admin/partials/access-requests` |
+| Access request review | `security.admin.partials.access-requests.show` | `/security/admin/partials/access-requests/{id}` |
 
 Example iframe embed:
 
@@ -178,8 +180,75 @@ Example iframe embed:
 | Roles table | `partials/roles-table.blade.php` |
 | Role edit form | `partials/role-form.blade.php` |
 | Permissions table | `partials/permissions-table.blade.php` |
+| Access requests queue | `partials/access-requests.blade.php` |
+| Access request review | `partials/access-request-review.blade.php` |
 
 All partials use the `pitb-security` CSS prefix so they won't clash with your styles. Override any file after publishing.
+
+## CAPTCHA (login)
+
+Publish auth views and wire CAPTCHA into your login form:
+
+```bash
+php artisan vendor:publish --tag=security-views
+# → resources/views/vendor/security/auth/, mfa/, password/
+```
+
+Embed the login partial in your page:
+
+```blade
+@include('security::auth.partials.login-form', ['action' => route('login')])
+```
+
+Validate with the package request class (or add `ValidCaptcha` to your own `LoginRequest`):
+
+```php
+use Pitbphp\Security\Http\Requests\SecurityLoginRequest;
+
+public function login(SecurityLoginRequest $request) { ... }
+```
+
+Ensure `mews/captcha` is installed and its routes are registered (`CaptchaServiceProvider`). Set `SECURITY_CAPTCHA_ENABLED=true` in `.env`.
+
+## MFA (email OTP)
+
+Enable with `SECURITY_MFA_ENABLED=true`. After login, middleware redirects to `/security/mfa/verify`.
+
+Publish and customize the verify form:
+
+```blade
+@include('security::mfa.partials.verify-form')
+```
+
+Failed OTP attempts count toward account lockout (`SECURITY_LOCKOUT_ATTEMPTS`).
+
+## Access provisioning (approval workflow)
+
+When `SECURITY_ACCESS_PROVISIONING=true` (default):
+
+| Actor | Behaviour |
+|-------|-----------|
+| **super-admin** | Applies user/role changes immediately; sees pending queue on dashboard |
+| **admin** | Must submit changes with justification; super-admin approves or rejects |
+
+Configure roles in `config/security.php` under `access_provisioning`:
+
+```php
+'bypass_roles' => ['super-admin'],
+'approval_required_roles' => ['admin'],
+'approver_roles' => ['super-admin'],
+```
+
+Later you can add approver roles and grant `access-requests.approve` without code changes.
+
+Run migrations after update:
+
+```bash
+php artisan migrate
+php artisan security:seed-rbac   # adds access-requests.* permissions
+```
+
+Super-admins see **Pending access approvals** on the dashboard summary partial and can review at `/security/admin/partials/access-requests`.
 
 ## Optional password history for other models (e.g. Client)
 
@@ -285,6 +354,8 @@ SECURITY_AUDIT_DRIVER=activitylog
 SECURITY_PASSWORD_EXPIRY_DAYS=90
 SECURITY_SESSION_IDLE_MINUTES=20
 SECURITY_MFA_ENABLED=false
+SECURITY_CAPTCHA_ENABLED=true
+SECURITY_ACCESS_PROVISIONING=true
 ```
 
 ## Manual reviews

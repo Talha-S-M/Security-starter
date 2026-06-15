@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Identity</title>
+    <title>Sign in</title>
 </head>
 <body>
-    <h1>Two-Factor Verification</h1>
+    <h1>Sign in</h1>
 
-    @include('security::mfa.partials.verify-form')
+    @include('security::auth.partials.login-form')
 </body>
 </html>

@@ -172,6 +172,26 @@ return [
 
     'captcha' => [
         'enabled' => (bool) env('SECURITY_CAPTCHA_ENABLED', true),
+        'field' => env('SECURITY_CAPTCHA_FIELD', 'captcha'),
+        'login_route' => env('SECURITY_LOGIN_ROUTE', 'login'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Access Provisioning (approval workflow)
+    |--------------------------------------------------------------------------
+    |
+    | Super-admins bypass approval and apply changes immediately. Roles listed
+    | under approval_required_roles must submit changes for review. Approver
+    | roles can be expanded later via permissions (access-requests.approve).
+    |
+    */
+
+    'access_provisioning' => [
+        'enabled' => (bool) env('SECURITY_ACCESS_PROVISIONING', true),
+        'bypass_roles' => ['super-admin'],
+        'approval_required_roles' => ['admin'],
+        'approver_roles' => ['super-admin'],
     ],
 
     /*
@@ -203,6 +223,8 @@ return [
             'security-reviews.record',
             'access-reviews.perform',
             'log-reviews.perform',
+            'access-requests.view',
+            'access-requests.approve',
             'admin.panel',
         ],
 
@@ -221,6 +243,7 @@ return [
                 'security-reviews.record',
                 'access-reviews.perform',
                 'log-reviews.perform',
+                'access-requests.view',
                 'admin.panel',
             ],
             'manager' => [

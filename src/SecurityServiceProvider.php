@@ -117,6 +117,8 @@ class SecurityServiceProvider extends ServiceProvider
 
             __DIR__.'/../resources/views/mfa' => resource_path('views/vendor/security/mfa'),
 
+            __DIR__.'/../resources/views/auth' => resource_path('views/vendor/security/auth'),
+
             __DIR__.'/../resources/views/admin' => resource_path('views/vendor/security/admin'),
 
         ], 'security-views');

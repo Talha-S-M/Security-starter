@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Pitbphp\Security\Http\Controllers\Admin\AccessRequestController;
 use Pitbphp\Security\Http\Controllers\Admin\DashboardController;
 use Pitbphp\Security\Http\Controllers\Admin\PermissionController;
 use Pitbphp\Security\Http\Controllers\Admin\RoleController;
@@ -46,4 +47,15 @@ Route::prefix(SecurityRoutes::adminPath())
         Route::get('permissions', [PermissionController::class, 'index'])
             ->middleware('permission:permissions.view')
             ->name('permissions');
+
+        Route::middleware('permission:access-requests.view|access-requests.approve')->group(function () {
+            Route::get('access-requests', [AccessRequestController::class, 'index'])->name('access-requests');
+            Route::get('access-requests/{accessRequest}', [AccessRequestController::class, 'show'])->name('access-requests.show');
+            Route::post('access-requests/{accessRequest}/approve', [AccessRequestController::class, 'approve'])
+                ->middleware('permission:access-requests.approve')
+                ->name('access-requests.approve');
+            Route::post('access-requests/{accessRequest}/reject', [AccessRequestController::class, 'reject'])
+                ->middleware('permission:access-requests.approve')
+                ->name('access-requests.reject');
+        });
     });
