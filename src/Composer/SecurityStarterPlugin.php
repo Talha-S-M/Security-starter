@@ -7,7 +7,11 @@ use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
+use Composer\Package\PackageInterface;
 use Composer\Plugin\PluginInterface;
+use Composer\DependencyResolver\Operation\InstallOperation;
+use Composer\DependencyResolver\Operation\UpdateOperation;
+
 class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 {
     private const PACKAGE = 'pitbphp/security-starter';
@@ -36,9 +40,9 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 
     public function onPackageChange(PackageEvent $event): void
     {
-        $package = $event->getOperation()->getPackage();
+        $package = $this->resolvePackageFromOperation($event);
 
-        if ($package->getName() !== self::PACKAGE) {
+        if (! $package || $package->getName() !== self::PACKAGE) {
             return;
         }
 
@@ -47,6 +51,21 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
         }
 
         $this->promptAuditingDriver();
+    }
+
+    protected function resolvePackageFromOperation(PackageEvent $event): ?PackageInterface
+    {
+        $operation = $event->getOperation();
+
+        if ($operation instanceof InstallOperation) {
+            return $operation->getPackage();
+        }
+
+        if ($operation instanceof UpdateOperation) {
+            return $operation->getTargetPackage();
+        }
+
+        return null;
     }
 
     protected function promptAuditingDriver(): void
