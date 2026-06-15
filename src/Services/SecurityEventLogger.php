@@ -3,9 +3,9 @@
 namespace Pitbphp\Security\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 use Pitbphp\Security\Models\SecurityEvent;
-use Pitbphp\Security\Models\SecurityReview;
 
 class SecurityEventLogger
 {
@@ -14,6 +14,16 @@ class SecurityEventLogger
     ) {}
 
     public function auth(string $event, bool $success, ?Authenticatable $user = null, array $extra = []): void
+    {
+        $this->log('auth', $event, $success, $user, $extra);
+    }
+
+    public function authorization(string $event, bool $success, ?Authenticatable $user = null, array $extra = []): void
+    {
+        $this->log('authorization', $event, $success, $user, $extra);
+    }
+
+    public function rbac(string $event, bool $success, ?Authenticatable $subject = null, ?Authenticatable $causer = null, array $extra = []): void
     {
         $request = request();
 
@@ -25,7 +35,7 @@ class SecurityEventLogger
         ], $this->sanitize($extra));
 
         SecurityEvent::query()->create([
-            'user_id' => $user?->getAuthIdentifier(),
+            'user_id' => $causer?->getAuthIdentifier() ?? $subject?->getAuthIdentifier(),
             'event_type' => $event,
             'success' => $success,
             'ip_address' => $request?->ip(),
@@ -33,7 +43,10 @@ class SecurityEventLogger
             'properties' => $properties,
         ]);
 
-        $this->auditLogger->log($event, $properties, $user, $user);
+        $auditSubject = $subject instanceof Model ? $subject : null;
+        $auditCauser = $causer instanceof Model ? $causer : null;
+
+        $this->auditLogger->log($event, $properties, $auditSubject, $auditCauser);
     }
 
     public function recordReview(
@@ -41,8 +54,8 @@ class SecurityEventLogger
         Authenticatable $performer,
         ?string $notes = null,
         array $metadata = []
-    ): SecurityReview {
-        $review = SecurityReview::query()->create([
+    ): \Pitbphp\Security\Models\SecurityReview {
+        $review = \Pitbphp\Security\Models\SecurityReview::query()->create([
             'type' => $type,
             'performed_by' => $performer->getAuthIdentifier(),
             'notes' => $notes,
@@ -64,6 +77,32 @@ class SecurityEventLogger
         return SecurityEvent::query()
             ->where('created_at', '<', $before)
             ->delete();
+    }
+
+    protected function log(string $category, string $event, bool $success, ?Authenticatable $user, array $extra): void
+    {
+        $request = request();
+
+        $properties = array_merge([
+            'category' => $category,
+            'success' => $success,
+            'ip' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'origination' => $request?->ip(),
+        ], $this->sanitize($extra));
+
+        SecurityEvent::query()->create([
+            'user_id' => $user?->getAuthIdentifier(),
+            'event_type' => $event,
+            'success' => $success,
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'properties' => $properties,
+        ]);
+
+        $subject = $user instanceof Model ? $user : null;
+
+        $this->auditLogger->log($event, $properties, $subject, $subject);
     }
 
     protected function sanitize(array $data): array

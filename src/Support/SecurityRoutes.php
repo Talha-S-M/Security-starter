@@ -16,6 +16,18 @@ class SecurityRoutes
         return $path === '' ? $prefix : $prefix.'/'.ltrim($path, '/');
     }
 
+    public static function adminName(string $route): string
+    {
+        return self::name('admin.').$route;
+    }
+
+    public static function adminPath(string $path = ''): string
+    {
+        $prefix = trim(config('security.admin.path_prefix', 'security/admin'), '/');
+
+        return $path === '' ? $prefix : $prefix.'/'.ltrim($path, '/');
+    }
+
     public static function apiName(string $route): string
     {
         return config('security.api.route_name_prefix', 'security.api.').$route;

@@ -18,10 +18,11 @@ This will (once):
 
 1. Ask which auditing library to use (`activitylog`, `auditing`, or `none`)
 2. Install the matching Composer package with a Laravel-compatible version
-3. Publish config, views, and migrations
-4. Run package migrations
+3. Publish config, views, migrations, and Spatie Permission assets
+4. Run package and permission migrations
+5. Seed default PITB roles and permissions
 
-Use `--driver=activitylog` to skip the prompt, or `--skip-composer` if you install auditing packages yourself.
+Use `--driver=activitylog` to skip the prompt, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
 
 ### Publish customizable views
 
@@ -48,6 +49,137 @@ class User extends Authenticatable
     use HasPitbSecurity;
 }
 ```
+
+`HasPitbSecurity` includes `HasPitbRbac` (Spatie `HasRoles`) and password history support.
+
+### Owen-It full model auditing (optional)
+
+When `SECURITY_AUDIT_DRIVER=auditing`, add to sensitive models:
+
+```php
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Pitbphp\Security\Traits\HasPitbAuditing;
+
+class User extends Authenticatable implements Auditable
+{
+    use HasPitbSecurity, AuditableTrait, HasPitbAuditing;
+}
+```
+
+## RBAC (roles & permissions)
+
+Installed by default via Spatie Laravel Permission. `security:install` seeds:
+
+| Role | Purpose |
+|------|---------|
+| `super-admin` | All permissions |
+| `admin` | User/role management, audit logs, security reviews |
+| `manager` | View users, perform access/log reviews |
+| `user` | Standard application access |
+| `vendor` | Third-party time-bound access |
+
+Default permissions include `users.*`, `roles.manage`, `audit-logs.view`, `access-reviews.perform`, `log-reviews.perform`, and more. Customize in `config/security.php` under `permissions`.
+
+```bash
+php artisan security:seed-rbac
+```
+
+### Route protection
+
+```php
+Route::middleware(['auth', 'permission:audit-logs.view'])->group(function () {
+    // ...
+});
+
+Route::middleware(['role:admin|manager'])->group(function () {
+    // ...
+});
+```
+
+### Automatic logging
+
+- Role/permission assignments → `security_events` + auditing driver
+- Denied authorization checks → `authorization.denied` events (when enabled)
+- Auth events → existing login/logout/failure logging
+
+## Admin partials (embed in your dashboard)
+
+Publishable Blade **partials only** — no full layout. Embed in your own dashboard or load via routes (iframe/AJAX).
+
+```bash
+php artisan vendor:publish --tag=security-admin-views
+# → resources/views/vendor/security/admin/partials/
+```
+
+### Option 1 — @include in your Blade
+
+```blade
+{{-- your-app/resources/views/dashboard/security.blade.php --}}
+@extends('layouts.app')
+
+@section('content')
+    @include('security::admin.partials.styles') {{-- once per page --}}
+    @include('security::admin.partials.nav')
+
+    <h1>Security</h1>
+    @include('security::admin.partials.users-table', [
+        'users' => $users,
+        'filters' => request()->only('search'),
+    ])
+@endsection
+```
+
+Fetch data in your controller using the same queries, or proxy from package services:
+
+```php
+use Pitbphp\Security\Services\AuditLogReader;
+
+$events = app(AuditLogReader::class)->securityEvents(request()->only(['event_type', 'success']));
+return view('dashboard.security', compact('events'));
+```
+
+### Option 2 — Load partial HTML from package routes
+
+Each partial has a route that returns ready-to-embed HTML:
+
+| Partial | Route name | URL |
+|---------|------------|-----|
+| Summary | `security.admin.partials.summary` | `/security/admin/partials/summary` |
+| Security events | `security.admin.partials.security-events` | `/security/admin/partials/security-events` |
+| Event detail | `security.admin.partials.security-events.show` | `/security/admin/partials/security-events/{id}` |
+| Audit trail | `security.admin.partials.audit-trail` | `/security/admin/partials/audit-trail` |
+| Reviews | `security.admin.partials.reviews` | `/security/admin/partials/reviews` |
+| Users table | `security.admin.partials.users` | `/security/admin/partials/users` |
+| User form | `security.admin.partials.users.edit` | `/security/admin/partials/users/{id}/edit` |
+| Roles table | `security.admin.partials.roles` | `/security/admin/partials/roles` |
+| Role form | `security.admin.partials.roles.edit` | `/security/admin/partials/roles/{id}/edit` |
+| Permissions | `security.admin.partials.permissions` | `/security/admin/partials/permissions` |
+
+Example iframe embed:
+
+```blade
+<iframe src="{{ route('security.admin.partials.users') }}" class="w-full min-h-screen border-0"></iframe>
+```
+
+### Available partials
+
+| Partial | File |
+|---------|------|
+| Styles (CSS) | `partials/styles.blade.php` |
+| Nav links | `partials/nav.blade.php` |
+| Dashboard summary | `partials/dashboard-summary.blade.php` |
+| Security events | `partials/security-events.blade.php` |
+| Event detail | `partials/security-event-detail.blade.php` |
+| Audit trail | `partials/audit-trail.blade.php` |
+| Manual reviews | `partials/reviews.blade.php` |
+| Users table | `partials/users-table.blade.php` |
+| User edit form | `partials/user-form.blade.php` |
+| Roles table | `partials/roles-table.blade.php` |
+| Role edit form | `partials/role-form.blade.php` |
+| Permissions table | `partials/permissions-table.blade.php` |
+
+All partials use the `pitb-security` CSS prefix so they won't clash with your styles. Override any file after publishing.
 
 ## Optional password history for other models (e.g. Client)
 

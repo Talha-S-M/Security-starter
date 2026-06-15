@@ -7,6 +7,7 @@ use Illuminate\Support\Carbon;
 trait HasPitbSecurity
 {
     use HasPasswordHistory;
+    use HasPitbRbac;
 
     public function isSecurityActive(): bool
     {

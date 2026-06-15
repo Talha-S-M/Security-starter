@@ -14,10 +14,13 @@ use Illuminate\Auth\Events\Logout;
 
 use Illuminate\Auth\Events\PasswordReset;
 
+use Illuminate\Auth\Events\Registered;
+
 use Illuminate\Console\Scheduling\Schedule;
 
 use Illuminate\Routing\Router;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 use Pitbphp\Security\Auditing\ActivityLogAuditLogger;
@@ -40,10 +43,12 @@ use Pitbphp\Security\Commands\RecordAccessReviewCommand;
 
 use Pitbphp\Security\Commands\RecordInactiveReviewCommand;
 
-use Pitbphp\Security\Commands\RecordLogReviewCommand;
+use Pitbphp\Security\Commands\SeedRbacCommand;
 
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 
+use Pitbphp\Security\Listeners\AssignDefaultRole;
+use Pitbphp\Security\Listeners\LogAuthorizationEvents;
 use Pitbphp\Security\Listeners\LogAuthenticationEvents;
 
 use Pitbphp\Security\Middleware\CheckAccountStatus;
@@ -57,6 +62,8 @@ use Pitbphp\Security\Middleware\EnforceTokenTimeout;
 use Pitbphp\Security\Middleware\ForceHttps;
 
 use Pitbphp\Security\Middleware\RequireMfa;
+
+use Pitbphp\Security\Services\SecurityEventLogger;
 
 use Pitbphp\Security\Support\SecurityRequest;
 
@@ -110,7 +117,15 @@ class SecurityServiceProvider extends ServiceProvider
 
             __DIR__.'/../resources/views/mfa' => resource_path('views/vendor/security/mfa'),
 
+            __DIR__.'/../resources/views/admin' => resource_path('views/vendor/security/admin'),
+
         ], 'security-views');
+
+        $this->publishes([
+
+            __DIR__.'/../resources/views/admin' => resource_path('views/vendor/security/admin'),
+
+        ], 'security-admin-views');
 
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations/pitb_security'),
@@ -120,6 +135,10 @@ class SecurityServiceProvider extends ServiceProvider
 
         if (in_array(SecurityRequest::mode(), ['web', 'hybrid'], true)) {
             $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
+
+            if (config('security.admin.enabled', true)) {
+                $this->loadRoutesFrom(__DIR__.'/../routes/security-admin.php');
+            }
         }
 
         if (SecurityRequest::isApiEnabled()) {
@@ -150,6 +169,8 @@ class SecurityServiceProvider extends ServiceProvider
 
         $this->registerEventListeners();
 
+        $this->registerAuthorizationLogging();
+
         $this->registerSchedule();
 
     }
@@ -170,6 +191,16 @@ class SecurityServiceProvider extends ServiceProvider
 
             $router->aliasMiddleware($alias, $class);
 
+        }
+
+        if (config('security.permissions.enabled', true) && class_exists(\Spatie\Permission\Middleware\RoleMiddleware::class)) {
+            $router->aliasMiddleware('role', \Spatie\Permission\Middleware\RoleMiddleware::class);
+            $router->aliasMiddleware('permission', \Spatie\Permission\Middleware\PermissionMiddleware::class);
+            $router->aliasMiddleware('role_or_permission', \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class);
+        } elseif (config('security.permissions.enabled', true) && class_exists(\Spatie\Permission\Middlewares\RoleMiddleware::class)) {
+            $router->aliasMiddleware('role', \Spatie\Permission\Middlewares\RoleMiddleware::class);
+            $router->aliasMiddleware('permission', \Spatie\Permission\Middlewares\PermissionMiddleware::class);
+            $router->aliasMiddleware('role_or_permission', \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class);
         }
 
 
@@ -302,6 +333,8 @@ class SecurityServiceProvider extends ServiceProvider
 
             InstallSecurityCommand::class,
 
+            SeedRbacCommand::class,
+
             DisableInactiveUsersCommand::class,
 
             NotifyAccessReviewCommand::class,
@@ -337,6 +370,47 @@ class SecurityServiceProvider extends ServiceProvider
         $this->app['events']->listen(Logout::class, [$listener, 'handleLogout']);
 
         $this->app['events']->listen(PasswordReset::class, [$listener, 'handlePasswordReset']);
+
+        if (config('security.permissions.enabled', true)) {
+            $rbacListener = LogAuthorizationEvents::class;
+
+            $this->app['events']->listen(\Spatie\Permission\Events\RoleAttached::class, [$rbacListener, 'handleRoleAttached']);
+            $this->app['events']->listen(\Spatie\Permission\Events\RoleDetached::class, [$rbacListener, 'handleRoleDetached']);
+            $this->app['events']->listen(\Spatie\Permission\Events\PermissionAttached::class, [$rbacListener, 'handlePermissionAttached']);
+            $this->app['events']->listen(\Spatie\Permission\Events\PermissionDetached::class, [$rbacListener, 'handlePermissionDetached']);
+
+            $this->app['events']->listen(Registered::class, AssignDefaultRole::class);
+        }
+
+    }
+
+    protected function registerAuthorizationLogging(): void
+
+    {
+
+        if (! config('security.permissions.enabled', true) || ! config('security.auditing.log_authorization_denials', true)) {
+
+            return;
+
+        }
+
+        Gate::after(function ($user, string $ability, ?bool $result, array $arguments = []) {
+
+            if ($result !== false || ! $user) {
+
+                return;
+
+            }
+
+            app(SecurityEventLogger::class)->authorization('authorization.denied', false, $user, [
+
+                'ability' => $ability,
+
+                'arguments' => $arguments,
+
+            ]);
+
+        });
 
     }
 

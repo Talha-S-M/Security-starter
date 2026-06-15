@@ -176,27 +176,79 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Auditing Driver
-    |--------------------------------------------------------------------------
-    |
-    | activitylog — lightweight, logs key security events only (Spatie).
-    | auditing    — full model change history (Owen-It).
-    | none        — package security_events table only.
-    |
-    */
-
-    'auditing' => [
-        'driver' => env('SECURITY_AUDIT_DRIVER', 'activitylog'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Authorization (Spatie Permission)
     |--------------------------------------------------------------------------
     */
 
     'permissions' => [
         'enabled' => (bool) env('SECURITY_PERMISSIONS_ENABLED', true),
+        'guard' => env('SECURITY_PERMISSIONS_GUARD', 'web'),
+        'seed_on_install' => (bool) env('SECURITY_PERMISSIONS_SEED', true),
+        'default_user_role' => env('SECURITY_DEFAULT_USER_ROLE', 'user'),
+        'vendor_role' => 'vendor',
+        'privileged_roles' => ['super-admin', 'admin'],
+
+        'permissions' => [
+            'security.access',
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.disable',
+            'roles.view',
+            'roles.manage',
+            'permissions.view',
+            'permissions.manage',
+            'audit-logs.view',
+            'security-reviews.view',
+            'security-reviews.record',
+            'access-reviews.perform',
+            'log-reviews.perform',
+            'admin.panel',
+        ],
+
+        'roles' => [
+            'super-admin' => ['*'],
+            'admin' => [
+                'security.access',
+                'users.view',
+                'users.create',
+                'users.update',
+                'users.disable',
+                'roles.view',
+                'permissions.view',
+                'audit-logs.view',
+                'security-reviews.view',
+                'security-reviews.record',
+                'access-reviews.perform',
+                'log-reviews.perform',
+                'admin.panel',
+            ],
+            'manager' => [
+                'security.access',
+                'users.view',
+                'audit-logs.view',
+                'access-reviews.perform',
+                'log-reviews.perform',
+            ],
+            'user' => [
+                'security.access',
+            ],
+            'vendor' => [
+                'security.access',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auditing Model Options
+    |--------------------------------------------------------------------------
+    */
+
+    'auditing' => [
+        'driver' => env('SECURITY_AUDIT_DRIVER', 'activitylog'),
+        'exclude_attributes' => ['password', 'remember_token'],
+        'log_authorization_denials' => (bool) env('SECURITY_LOG_AUTH_DENIED', true),
     ],
 
     /*
@@ -231,6 +283,18 @@ return [
             'enabled' => true,
             'reminder_cron' => env('SECURITY_INACTIVE_CRON', '0 7 * * 1'),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Panel
+    |--------------------------------------------------------------------------
+    */
+
+    'admin' => [
+        'enabled' => (bool) env('SECURITY_ADMIN_ENABLED', true),
+        'path_prefix' => env('SECURITY_ADMIN_PATH_PREFIX', 'security/admin/partials'),
+        'per_page' => (int) env('SECURITY_ADMIN_PER_PAGE', 25),
     ],
 
     /*
