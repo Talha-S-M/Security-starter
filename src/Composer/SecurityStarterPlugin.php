@@ -15,7 +15,6 @@ use Composer\DependencyResolver\Operation\UpdateOperation;
 class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 {
     private const PACKAGE = 'pitbphp/security-starter';
-
     private Composer $composer;
 
     private IOInterface $io;
