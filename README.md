@@ -19,11 +19,33 @@ This will (once):
 1. Ask which auditing library to use (`activitylog`, `auditing`, or `none`)
 2. Ask which runtime mode to secure (`web`, `api`, or `hybrid`)
 3. Install the matching Composer package with a Laravel-compatible version
-4. Publish config, views, migrations, and Spatie Permission assets
+4. Publish config, views, migrations, and **dependency configs** (`captcha.php`, `permission.php`, `activitylog.php` or `audit.php`)
 5. Run package and permission migrations
 6. Seed default PITB roles and permissions
 
 Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
+
+Re-publish dependency configs only (without re-running full install):
+
+```bash
+php artisan security:publish-vendor-config
+# or: php artisan security:publish-vendor-config --driver=activitylog --force
+```
+
+**`config/security.php` is the source of truth** for feature toggles. Vendor configs (`captcha.php`, `activitylog.php`, `permission.php`, `audit.php`) hold package-specific settings only.
+
+At runtime the package mirrors security settings into vendor config keys so they cannot disagree:
+
+| `security.php` | Mirrored to |
+|----------------|-------------|
+| `captcha.enabled` | `captcha.disable` (inverted) |
+| `auditing.driver` | `activitylog.enabled` / `audit.enabled` |
+| `permissions.guard` | `permission.defaults.guard_name` |
+| `logging.retention.audit_trail_months` | `activitylog.delete_records_older_than_days` |
+
+Legacy vendor env keys (`CAPTCHA_DISABLE`, `ACTIVITY_LOGGER_ENABLED`, `AUDITING_ENABLED`, `PERMISSION_GUARD`) are no longer required and should be removed when present.
+
+Run `php artisan security:doctor` to detect legacy/env drift and then clear config cache.
 
 ### Publish customizable views
 

@@ -39,6 +39,8 @@ use Pitbphp\Security\Commands\NotifyAccessReviewCommand;
 
 use Pitbphp\Security\Commands\NotifyLogReviewCommand;
 
+use Pitbphp\Security\Commands\PublishVendorConfigCommand;
+use Pitbphp\Security\Support\VendorConfigAligner;
 use Pitbphp\Security\Commands\PruneSecurityLogsCommand;
 
 use Pitbphp\Security\Commands\RecordAccessReviewCommand;
@@ -86,6 +88,10 @@ class SecurityServiceProvider extends ServiceProvider
     {
 
         $this->mergeConfigFrom(__DIR__.'/../config/security.php', 'security');
+
+        $this->app->booting(function () {
+            VendorConfigAligner::apply();
+        });
 
 
 
@@ -371,6 +377,8 @@ class SecurityServiceProvider extends ServiceProvider
             NotifyLogReviewCommand::class,
 
             PruneSecurityLogsCommand::class,
+
+            PublishVendorConfigCommand::class,
 
             RecordAccessReviewCommand::class,
 

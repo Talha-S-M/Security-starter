@@ -232,6 +232,10 @@ return [
     |--------------------------------------------------------------------------
     | CAPTCHA
     |--------------------------------------------------------------------------
+    |
+    | Source of truth for whether CAPTCHA is on. At runtime this is mirrored
+    | to captcha.disable (inverted). SECURITY_* keys should be preferred.
+    |
     */
 
     'captcha' => [
@@ -329,6 +333,10 @@ return [
     |--------------------------------------------------------------------------
     | Auditing Model Options
     |--------------------------------------------------------------------------
+    |
+    | Source of truth for audit driver. Mirrored to activitylog.enabled and
+    | audit.enabled at runtime; SECURITY_* keys should be preferred.
+    |
     */
 
     'auditing' => [

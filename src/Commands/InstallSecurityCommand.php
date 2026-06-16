@@ -9,6 +9,7 @@ namespace Pitbphp\Security\Commands;
 use Illuminate\Console\Command;
 
 use Pitbphp\Security\Support\AuditingPackageResolver;
+use Pitbphp\Security\Support\VendorConfigPublisher;
 
 use Symfony\Component\Process\Process;
 
@@ -69,6 +70,7 @@ class InstallSecurityCommand extends Command
 
 
         $this->publishAssets();
+        $this->publishVendorConfigs($driver);
 
         $this->runPackageMigrations();
 
@@ -193,20 +195,13 @@ class InstallSecurityCommand extends Command
 
         ]);
 
+    }
 
+    protected function publishVendorConfigs(string $auditDriver): void
+    {
+        $this->info('Publishing dependency config files (skipped if already present)...');
 
-        if (config('security.permissions.enabled', true)) {
-
-            $this->call('vendor:publish', [
-
-                '--provider' => 'Spatie\Permission\PermissionServiceProvider',
-
-                '--force' => $force,
-
-            ]);
-
-        }
-
+        VendorConfigPublisher::publish($this, $auditDriver, (bool) $this->option('force'));
     }
 
 

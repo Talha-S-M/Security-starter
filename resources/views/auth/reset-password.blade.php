@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset password</title>
+    @include('security::admin.partials.styles')
 </head>
-<body>
+<body class="pitb-security pitb-security-page">
     @include('security::partials.header')
 
-    <h1>Reset password</h1>
-
-    @include('security::auth.partials.reset-password-form', compact('token', 'email'))
+    <main class="auth-shell">
+        <div class="card auth-card">
+            <h1>Reset password</h1>
+            @include('security::auth.partials.reset-password-form', compact('token', 'email'))
+        </div>
+    </main>
 </body>
 </html>

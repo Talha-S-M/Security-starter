@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\SecurityRoutes;
+use Pitbphp\Security\Support\VendorConfigAligner;
 
 class SecurityDoctorCommand extends Command
 {
@@ -38,6 +39,18 @@ class SecurityDoctorCommand extends Command
 
         $mailTo = array_filter((array) config('security.notifications.mail_to', []));
         $this->check(! empty($mailTo), 'SECURITY_MAIL_TO configured');
+
+        $configIssues = VendorConfigAligner::diagnose();
+        if ($configIssues !== []) {
+            $this->newLine();
+            $this->warn('Legacy vendor env keys detected (safe but redundant due runtime alignment):');
+            foreach ($configIssues as $issue) {
+                $this->line('  - '.$issue);
+            }
+            $this->line('  Recommendation: remove old vendor env keys (CAPTCHA_DISABLE, ACTIVITY_LOGGER_ENABLED, AUDITING_ENABLED, PERMISSION_GUARD), keep SECURITY_* only, then run `php artisan config:clear`.');
+        } else {
+            $this->check(true, 'Vendor configs aligned with config/security.php');
+        }
 
         $this->newLine();
         if ($failed) {
