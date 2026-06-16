@@ -32,6 +32,14 @@ php artisan vendor:publish --tag=security-views
 
 Views are copied to `resources/views/vendor/security/` where you can edit them freely.
 
+### Integrate with Laravel default welcome page (optional)
+
+```bash
+php artisan security:integrate-welcome
+```
+
+This injects `@include('security::partials.header')` into `resources/views/welcome.blade.php` (idempotent: it will not duplicate). If your welcome page has no `<body>` tag, run with `--force`.
+
 ### Publish migrations manually
 
 ```bash

@@ -31,6 +31,8 @@ use Pitbphp\Security\Auditing\OwenItAuditLogger;
 
 use Pitbphp\Security\Commands\DisableInactiveUsersCommand;
 
+use Pitbphp\Security\Commands\IntegrateWelcomeCommand;
+
 use Pitbphp\Security\Commands\InstallSecurityCommand;
 
 use Pitbphp\Security\Commands\NotifyAccessReviewCommand;
@@ -340,6 +342,8 @@ class SecurityServiceProvider extends ServiceProvider
         $this->commands([
 
             InstallSecurityCommand::class,
+
+            IntegrateWelcomeCommand::class,
 
             SeedRbacCommand::class,
 
