@@ -21,6 +21,7 @@ class InstallSecurityCommand extends Command
     protected $signature = 'security:install
 
                             {--driver= : Auditing driver: activitylog, auditing, or none}
+                            {--mode= : Security mode: web, api, or hybrid}
 
                             {--skip-composer : Do not run composer require}
 
@@ -55,6 +56,7 @@ class InstallSecurityCommand extends Command
 
 
         $this->updateEnv('SECURITY_AUDIT_DRIVER', $driver);
+        $this->updateEnv('SECURITY_MODE', $this->resolveMode());
 
 
 
@@ -131,6 +133,26 @@ class InstallSecurityCommand extends Command
 
         );
 
+    }
+
+    protected function resolveMode(): string
+    {
+        if ($mode = $this->option('mode')) {
+            return $mode;
+        }
+
+        $current = trim((string) env('SECURITY_MODE', ''));
+
+        if ($current !== '' && in_array($current, ['web', 'api', 'hybrid'], true)) {
+            $this->info("Using existing SECURITY_MODE={$current}");
+            return $current;
+        }
+
+        return $this->choice(
+            'Which runtime mode do you want to secure?',
+            ['web', 'api', 'hybrid'],
+            0
+        );
     }
 
 

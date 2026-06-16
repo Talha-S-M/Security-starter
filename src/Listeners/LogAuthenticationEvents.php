@@ -42,13 +42,18 @@ class LogAuthenticationEvents
 
     public function handleFailed(Failed $event): void
     {
+        $email = $event->credentials['email'] ?? null;
+
         $this->logger->auth('auth.failed', false, $event->user, [
-            'email' => $event->credentials['email'] ?? null,
+            'email' => $email,
         ]);
 
         if ($event->user) {
-            $this->loginAttempts->recordFailure($event->user);
+            $this->loginAttempts->recordFailure($event->user, $email, request()->ip());
+            return;
         }
+
+        $this->loginAttempts->recordNetworkFailure($email, request()->ip());
     }
 
     public function handleLogout(Logout $event): void

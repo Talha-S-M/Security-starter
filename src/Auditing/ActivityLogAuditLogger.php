@@ -5,6 +5,7 @@ namespace Pitbphp\Security\Auditing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
+use Pitbphp\Security\Support\SensitiveDataRedactor;
 
 class ActivityLogAuditLogger implements AuditLoggerInterface
 {
@@ -44,14 +45,6 @@ class ActivityLogAuditLogger implements AuditLoggerInterface
 
     protected function sanitize(array $properties): array
     {
-        $sensitive = ['password', 'otp', 'token', 'secret', 'captcha'];
-
-        foreach ($properties as $key => $value) {
-            if (in_array(strtolower((string) $key), $sensitive, true)) {
-                $properties[$key] = '[REDACTED]';
-            }
-        }
-
-        return $properties;
+        return SensitiveDataRedactor::redact($properties);
     }
 }

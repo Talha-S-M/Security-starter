@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 use Pitbphp\Security\Models\SecurityEvent;
+use Pitbphp\Security\Support\SensitiveDataRedactor;
 
 class SecurityEventLogger
 {
@@ -107,12 +108,6 @@ class SecurityEventLogger
 
     protected function sanitize(array $data): array
     {
-        foreach ($data as $key => $value) {
-            if (in_array(strtolower((string) $key), ['password', 'otp', 'token', 'secret'], true)) {
-                $data[$key] = '[REDACTED]';
-            }
-        }
-
-        return $data;
+        return SensitiveDataRedactor::redact($data);
     }
 }

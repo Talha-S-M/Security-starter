@@ -25,19 +25,31 @@ class SecurityResponder
         }
 
         if ($redirectRoute) {
-            return redirect()->route($redirectRoute)->withErrors(['email' => $message]);
+            if (\Illuminate\Support\Facades\Route::has($redirectRoute)) {
+                return redirect()->route($redirectRoute)->withErrors(['email' => $message]);
+            }
+
+            return redirect('/login')->withErrors(['email' => $message]);
         }
 
-        return redirect()->route('login')->withErrors(['email' => $message]);
+        if (\Illuminate\Support\Facades\Route::has('login')) {
+            return redirect()->route('login')->withErrors(['email' => $message]);
+        }
+
+        return redirect('/login')->withErrors(['email' => $message]);
     }
 
     public static function passwordExpired(Request $request): Response
     {
         if (SecurityRequest::isApi($request) || $request->expectsJson()) {
+            $apiAction = \Illuminate\Support\Facades\Route::has(SecurityRoutes::apiName('password.update'))
+                ? route(SecurityRoutes::apiName('password.update'))
+                : SecurityRoutes::apiPath('password/update');
+
             return response()->json([
                 'message' => 'Password expired.',
                 'error_code' => 'password_expired',
-                'action' => SecurityRoutes::apiName('password.update'),
+                'action' => $apiAction,
             ], 403);
         }
 
@@ -50,8 +62,12 @@ class SecurityResponder
             'message' => 'MFA verification required.',
             'error_code' => 'mfa_required',
             'action' => SecurityRequest::isApi($request)
-                ? SecurityRoutes::apiName('mfa.verify')
-                : SecurityRoutes::name('mfa.verify'),
+                ? (\Illuminate\Support\Facades\Route::has(SecurityRoutes::apiName('mfa.verify'))
+                    ? route(SecurityRoutes::apiName('mfa.verify'))
+                    : SecurityRoutes::apiPath('mfa/verify'))
+                : (\Illuminate\Support\Facades\Route::has(SecurityRoutes::name('mfa.verify'))
+                    ? route(SecurityRoutes::name('mfa.verify'))
+                    : SecurityRoutes::path('mfa/verify')),
         ];
 
         if (SecurityRequest::isApi($request) || $request->expectsJson()) {

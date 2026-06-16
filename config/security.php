@@ -113,6 +113,13 @@ return [
     'lockout' => [
         'max_attempts' => (int) env('SECURITY_LOCKOUT_ATTEMPTS', 5),
         'decay_minutes' => (int) env('SECURITY_LOCKOUT_MINUTES', 30),
+        'ip_max_attempts' => (int) env('SECURITY_LOCKOUT_IP_ATTEMPTS', 20),
+        'ip_decay_minutes' => (int) env('SECURITY_LOCKOUT_IP_MINUTES', 15),
+        'progressive' => [
+            5 => 30,
+            8 => 120,
+            12 => 720,
+        ],
     ],
 
     /*
@@ -283,6 +290,23 @@ return [
     'logging' => [
         'retention_months' => (int) env('SECURITY_LOG_RETENTION_MONTHS', 12),
         'minimum_retention_months' => (int) env('SECURITY_LOG_MIN_RETENTION_MONTHS', 3),
+        'retention' => [
+            'security_events_months' => (int) env('SECURITY_EVENTS_RETENTION_MONTHS', 12),
+            'audit_trail_months' => (int) env('SECURITY_AUDIT_RETENTION_MONTHS', 12),
+            'security_reviews_months' => (int) env('SECURITY_REVIEWS_RETENTION_MONTHS', 24),
+            'access_requests_months' => (int) env('SECURITY_ACCESS_REQUESTS_RETENTION_MONTHS', 24),
+        ],
+        'redact_keys' => [
+            'password',
+            'password_confirmation',
+            'remember_token',
+            'otp',
+            'token',
+            'secret',
+            'captcha',
+            'authorization',
+            'api_key',
+        ],
     ],
 
     /*

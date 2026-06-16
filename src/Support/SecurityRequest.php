@@ -31,6 +31,10 @@ class SecurityRequest
             return true;
         }
 
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return true;
+        }
+
         $prefix = trim(config('security.api.path_prefix', 'api/security'), '/');
 
         if ($prefix !== '' && $request->is($prefix, $prefix.'/*')) {

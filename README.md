@@ -17,12 +17,13 @@ php artisan security:install
 This will (once):
 
 1. Ask which auditing library to use (`activitylog`, `auditing`, or `none`)
-2. Install the matching Composer package with a Laravel-compatible version
-3. Publish config, views, migrations, and Spatie Permission assets
-4. Run package and permission migrations
-5. Seed default PITB roles and permissions
+2. Ask which runtime mode to secure (`web`, `api`, or `hybrid`)
+3. Install the matching Composer package with a Laravel-compatible version
+4. Publish config, views, migrations, and Spatie Permission assets
+5. Run package and permission migrations
+6. Seed default PITB roles and permissions
 
-Use `--driver=activitylog` to skip the prompt, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
+Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
 
 ### Publish customizable views
 
@@ -230,6 +231,8 @@ Publish and customize the verify form:
 
 Failed OTP attempts count toward account lockout (`SECURITY_LOCKOUT_ATTEMPTS`).
 
+Lockout is progressive by default (`5 => 30min`, `8 => 120min`, `12 => 720min`) and can also track repeated failures by `IP + email` combination.
+
 ## Access provisioning (approval workflow)
 
 When `SECURITY_ACCESS_PROVISIONING=true` (default):
@@ -340,6 +343,7 @@ SECURITY_API_TOKEN_IDLE_MINUTES=20
 | POST | `/api/security/mfa/resend` | `security.api.mfa.resend` |
 
 API security violations return JSON with an `error_code` (e.g. `password_expired`, `mfa_required`, `account_locked`). Tokens are revoked on account violations when `SECURITY_API_REVOKE_ON_VIOLATION=true`.
+In `api` or `hybrid` mode, middleware auto-detects API requests (Bearer token, API path, API route names, or JSON expectation) and consistently returns JSON errors.
 
 ### Example API flow
 
@@ -367,6 +371,14 @@ SECURITY_SESSION_IDLE_MINUTES=20
 SECURITY_MFA_ENABLED=false
 SECURITY_CAPTCHA_ENABLED=true
 SECURITY_ACCESS_PROVISIONING=true
+SECURITY_LOCKOUT_ATTEMPTS=5
+SECURITY_LOCKOUT_MINUTES=30
+SECURITY_LOCKOUT_IP_ATTEMPTS=20
+SECURITY_LOCKOUT_IP_MINUTES=15
+SECURITY_EVENTS_RETENTION_MONTHS=12
+SECURITY_AUDIT_RETENTION_MONTHS=12
+SECURITY_REVIEWS_RETENTION_MONTHS=24
+SECURITY_ACCESS_REQUESTS_RETENTION_MONTHS=24
 ```
 
 ## Manual reviews
@@ -376,6 +388,7 @@ php artisan security:record-access-review --user=1 --notes="Reviewed admin roles
 php artisan security:record-log-review --user=1 --notes="No anomalies"
 php artisan security:disable-inactive-users --dry-run
 php artisan security:prune-logs
+php artisan security:doctor
 ```
 
 ## Auditing drivers

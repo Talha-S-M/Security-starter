@@ -46,6 +46,7 @@ use Pitbphp\Security\Commands\RecordAccessReviewCommand;
 use Pitbphp\Security\Commands\RecordInactiveReviewCommand;
 
 use Pitbphp\Security\Commands\SeedRbacCommand;
+use Pitbphp\Security\Commands\SecurityDoctorCommand;
 
 use Pitbphp\Security\Commands\RecordLogReviewCommand;
 
@@ -344,6 +345,8 @@ class SecurityServiceProvider extends ServiceProvider
             InstallSecurityCommand::class,
 
             IntegrateWelcomeCommand::class,
+
+            SecurityDoctorCommand::class,
 
             SeedRbacCommand::class,
 
