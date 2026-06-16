@@ -65,15 +65,12 @@ class UserManagementController extends Controller
             return back()->withErrors(['roles' => 'Only a super-admin may assign the super-admin role.'])->withInput();
         }
 
-        $payload = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'roles' => $validated['roles'] ?? [config('security.permissions.default_user_role', 'user')],
-            'is_active' => true,
-            'must_change_password' => true,
-            'password_changed_at' => null,
-        ];
+        $payload = $this->provisioning->buildUserPayload(
+            $validated['name'],
+            $validated['email'],
+            Hash::make($validated['password']),
+            $validated['roles'] ?? []
+        );
 
         if ($this->provisioning->requiresApproval($request->user())) {
             $request->validate(['justification' => ['required', 'string', 'max:1000']]);
@@ -89,23 +86,10 @@ class UserManagementController extends Controller
 
             return redirect()
                 ->route(SecurityRoutes::adminName('partials.users'))
-                ->with('status', 'User creation request submitted for super-admin approval.');
+                ->with('status', 'User creation request submitted for approval.');
         }
 
-        $model = config('security.user.model');
-        $user = (new $model)->newQuery()->create([
-            'name' => $payload['name'],
-            'email' => $payload['email'],
-            'password' => $payload['password'],
-            'is_active' => true,
-            'must_change_password' => true,
-            'password_changed_at' => null,
-            'mfa_configured_at' => null,
-        ]);
-
-        if (method_exists($user, 'syncRoles')) {
-            $user->syncRoles($payload['roles']);
-        }
+        $this->provisioning->createUser($payload);
 
         return redirect()
             ->route(SecurityRoutes::adminName('partials.users'))

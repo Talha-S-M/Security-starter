@@ -11,15 +11,4 @@ trait HasPasswordHistory
     {
         return $this->morphMany(PasswordHistory::class, 'passwordable');
     }
-
-    public function getPasswordHistoryIdentifier(): int|string
-    {
-        return $this->getKey();
-    }
-
-    public function getPasswordHistoryType(): string
-    {
-        return $this->getMorphClass();
-    }
-
 }

@@ -6,6 +6,12 @@
     </ul>
 @endif
 
+@if (session('status'))
+    <p class="status">{{ session('status') }}</p>
+@endif
+
+<p class="muted">Your request will be reviewed by an administrator before you can sign in.</p>
+
 <form method="POST" action="{{ route('register') }}">
     @csrf
 
@@ -29,45 +35,21 @@
         <input id="password_confirmation" name="password_confirmation" type="password" required>
     </div>
 
-    <div class="field">
-        <label>MFA delivery method</label>
-        <div class="checkbox-group">
-            @foreach ($mfaMethods as $method)
-                <label>
-                    <input type="radio" name="mfa_method" value="{{ $method }}" @checked(old('mfa_method', config('security.mfa.default_method', 'email')) === $method)>
-                    {{ ucfirst($method) }}
-                </label>
-            @endforeach
-        </div>
-    </div>
+    @include('security::auth.partials.captcha-field', ['captchaId' => 'pitb-register-captcha-img'])
 
-    <div class="field">
-        <label for="phone">Phone (required for SMS MFA)</label>
-        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="+923001234567">
-    </div>
-
-    @if (config('security.captcha.enabled', true) && function_exists('captcha_src'))
-        @php($captchaProfile = config('security.captcha.profile', 'flat'))
-        <div class="field">
-            <label for="captcha">CAPTCHA</label>
-            <div class="captcha-wrap">
-                <img id="pitb-register-captcha-img" src="{{ captcha_src($captchaProfile) }}" alt="captcha" class="captcha-image">
-                <button type="button" class="btn btn-secondary captcha-refresh" onclick="pitbRefreshRegisterCaptcha()">Refresh</button>
-            </div>
-            <input id="captcha" name="{{ config('security.captcha.field', 'captcha') }}" type="text" required autocomplete="off" placeholder="Enter characters from image">
-        </div>
-        <script>
-            function pitbRefreshRegisterCaptcha() {
-                const img = document.getElementById('pitb-register-captcha-img');
-                const base = @json(captcha_src($captchaProfile));
-                img.src = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
-            }
-        </script>
-    @endif
-
-    <button class="btn btn-primary btn-block" type="submit">Register</button>
+    <button class="btn btn-primary btn-block" type="submit">Submit for approval</button>
 </form>
 
 <div class="auth-links">
     <a href="{{ route('login') }}">Already have an account?</a>
 </div>
+
+<script>
+    document.querySelectorAll('.captcha-refresh').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const img = document.getElementById(button.dataset.captchaId);
+            const base = button.dataset.captchaSrc;
+            img.src = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
+        });
+    });
+</script>

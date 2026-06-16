@@ -16,7 +16,7 @@ Route::middleware(['web'])->group(function () {
         Route::get('login', [LoginController::class, 'show'])->name('login');
         Route::post('login', [LoginController::class, 'login']);
 
-        if (config('security.auth.register', true)) {
+        if (config('security.auth.register', false)) {
             Route::get('register', [RegisterController::class, 'show'])->name('register');
             Route::post('register', [RegisterController::class, 'store']);
         }

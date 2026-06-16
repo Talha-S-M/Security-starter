@@ -76,8 +76,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Standard Laravel-style auth at app root (/login, /logout).
-    | Public self-registration is disabled by default; provision users via admin.
-    | Disable auth routes entirely if your app uses Breeze/Jetstream/Fortify.
+    | Public self-registration is disabled by default (`SECURITY_AUTH_REGISTER=false`).
+    | When enabled, registrations are queued for admin approval — no instant access.
+    | Provision users directly via admin partials regardless of this setting.
     |
     */
 
@@ -85,7 +86,6 @@ return [
         'enabled' => (bool) env('SECURITY_AUTH_ROUTES', true),
         'register' => (bool) env('SECURITY_AUTH_REGISTER', false),
         'redirect_after_login' => env('SECURITY_AFTER_LOGIN_REDIRECT', '/'),
-        'redirect_after_register' => env('SECURITY_AFTER_REGISTER_REDIRECT', '/'),
     ],
 
     /*
@@ -263,7 +263,7 @@ return [
         'enabled' => (bool) env('SECURITY_ACCESS_PROVISIONING', true),
         'bypass_roles' => ['super-admin'],
         'approval_required_roles' => ['admin'],
-        'approver_roles' => ['super-admin'],
+        'approver_roles' => ['super-admin', 'admin'],
     ],
 
     /*
@@ -316,6 +316,7 @@ return [
                 'access-reviews.perform',
                 'log-reviews.perform',
                 'access-requests.view',
+                'access-requests.approve',
                 'admin.panel',
             ],
             'manager' => [

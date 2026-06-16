@@ -4,7 +4,7 @@
     @guest
         <a href="{{ route('login') }}">Login</a>
         @if (config('security.auth.register', false))
-            <a href="{{ route('register') }}">Register</a>
+            <a href="{{ route('register') }}">Request account</a>
         @endif
     @endguest
 

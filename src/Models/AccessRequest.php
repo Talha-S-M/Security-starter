@@ -12,9 +12,11 @@ class AccessRequest extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
-    public const TYPE_USER_UPDATE = 'user_update';
-
     public const TYPE_USER_CREATE = 'user_create';
+
+    public const TYPE_USER_REGISTRATION = 'user_registration';
+
+    public const TYPE_USER_UPDATE = 'user_update';
 
     public const TYPE_ROLE_UPDATE = 'role_update';
 

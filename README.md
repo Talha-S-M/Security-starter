@@ -229,13 +229,13 @@ Fresh Laravel has no auth routes — this package registers standard ones at the
 | `/forgot-password` | `password.request` |
 | `/reset-password/{token}` | `password.reset` |
 
-Public self-registration is **disabled by default**. Provision users from the admin partials (`users.create`) as super-admin, or as admin with super-admin approval.
-
-Enable public registration only if needed:
+Public self-registration is **disabled by default**. When enabled, it still requires admin approval before the account is created.
 
 ```env
 SECURITY_AUTH_REGISTER=true
 ```
+
+Users can request an account at `/register`. An admin (or super-admin) approves it from the access requests queue. Approved users must change password and configure MFA on first login.
 
 Security enforcement routes (password expiry, MFA setup, MFA verify) stay under `/security/*`.
 
@@ -245,9 +245,13 @@ Disable package auth if you add Breeze/Jetstream later:
 SECURITY_AUTH_ROUTES=false
 ```
 
-### First login flow (provisioned users)
+### Registration (optional, approval required)
 
-When an admin creates a user with a temporary password:
+Only active when `SECURITY_AUTH_REGISTER=true`. Submissions create a `user_registration` access request — they do not log the user in.
+
+### First login flow (provisioned or approved users)
+
+When an admin creates a user, or approves a registration request:
 
 1. User signs in at `/login`
 2. Forced password change (`must_change_password`)
@@ -258,19 +262,8 @@ Enable MFA for this flow:
 
 ```env
 SECURITY_MFA_ENABLED=true
-```
-
-### Registration MFA method (only when `SECURITY_AUTH_REGISTER=true`)
-
-During registration users choose MFA delivery:
-
-- `email` — OTP by mail
-- `sms` — OTP via PITB SMS gateway (phone required)
-
-```env
 SECURITY_MFA_METHODS=email,sms
 SECURITY_MFA_DEFAULT_METHOD=email
-SECURITY_MFA_ENABLED=true
 ```
 
 ### PITB SMS gateway
