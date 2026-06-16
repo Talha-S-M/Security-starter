@@ -121,6 +121,10 @@ class SecurityServiceProvider extends ServiceProvider
 
             __DIR__.'/../resources/views/auth' => resource_path('views/vendor/security/auth'),
 
+            __DIR__.'/../resources/views/partials' => resource_path('views/vendor/security/partials'),
+
+            __DIR__.'/../resources/views/home.blade.php' => resource_path('views/vendor/security/home.blade.php'),
+
             __DIR__.'/../resources/views/admin' => resource_path('views/vendor/security/admin'),
 
         ], 'security-views');

@@ -286,6 +286,9 @@ app(PasswordHistoryService::class)->record($client, Hash::make($request->passwor
 
 All routes are prefixed under `/security` with the `security.` route name prefix:
 
+- Main page: `security.home` (`/security`) with a built-in header partial
+- Header partial: `security::partials.header` (shows `Login`/`Logout` and permission-based links for Users, Roles, Permissions, and Activity log)
+
 | URL | Route name |
 |-----|------------|
 | `/security/password/expired` | `security.password.expired` |

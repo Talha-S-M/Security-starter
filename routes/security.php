@@ -1,9 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Pitbphp\Security\Http\Controllers\HomeController;
 use Pitbphp\Security\Http\Controllers\MfaController;
 use Pitbphp\Security\Http\Controllers\PasswordController;
 use Pitbphp\Security\Support\SecurityRoutes;
+
+Route::prefix(SecurityRoutes::path())
+    ->name(SecurityRoutes::name(''))
+    ->middleware(['web'])
+    ->group(function () {
+        Route::get('/', [HomeController::class, 'index'])->name('home');
+    });
 
 Route::prefix(SecurityRoutes::path())
     ->name(SecurityRoutes::name(''))
