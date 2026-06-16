@@ -26,11 +26,7 @@ class AuditingPackageResolver
 
     public static function activityLogConstraint(): string
     {
-        if (self::laravelVersion() >= 11) {
-            return '^4.8';
-        }
-
-        return '^4.7';
+        return '^4.1';
     }
 
     public static function auditingConstraint(): string

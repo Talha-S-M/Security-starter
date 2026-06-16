@@ -45,6 +45,8 @@ use Pitbphp\Security\Commands\RecordInactiveReviewCommand;
 
 use Pitbphp\Security\Commands\SeedRbacCommand;
 
+use Pitbphp\Security\Commands\RecordLogReviewCommand;
+
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 
 use Pitbphp\Security\Listeners\AssignDefaultRole;
