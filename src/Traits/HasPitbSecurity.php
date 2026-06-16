@@ -41,4 +41,13 @@ trait HasPitbSecurity
 
         return Carbon::parse($this->access_expires_at)->isPast();
     }
+
+    public function mfaMethod(): string
+    {
+        $method = $this->mfa_method ?? config('security.mfa.default_method', 'email');
+
+        return in_array($method, config('security.mfa.methods', ['email', 'sms']), true)
+            ? $method
+            : config('security.mfa.default_method', 'email');
+    }
 }

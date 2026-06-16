@@ -10,10 +10,16 @@ class RouteHelper
     {
         $current = $request->route()?->getName();
 
-        if (! $current) {
-            return false;
+        if ($current && in_array($current, $routeNames, true)) {
+            return true;
         }
 
-        return in_array($current, $routeNames, true);
+        foreach (config('security.session.allowed_paths', []) as $pattern) {
+            if ($request->is($pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

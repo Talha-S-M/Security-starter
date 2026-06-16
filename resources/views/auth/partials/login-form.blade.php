@@ -7,7 +7,11 @@
         </ul>
     @endif
 
-    <form method="POST" action="{{ $action ?? route(config('security.captcha.login_route', 'login')) }}">
+    @if (session('status'))
+        <p class="status">{{ session('status') }}</p>
+    @endif
+
+    <form method="POST" action="{{ url('login') }}">
         @csrf
 
         <label for="email">Email</label>
@@ -24,4 +28,12 @@
 
         <button type="submit">{{ $submitLabel ?? 'Sign in' }}</button>
     </form>
+
+    <p style="margin-top: .75rem;">
+        @if (config('security.auth.register', true))
+            <a href="{{ route('register') }}">Create an account</a>
+            &nbsp;|&nbsp;
+        @endif
+        <a href="{{ route('password.request') }}">Forgot password?</a>
+    </p>
 </div>

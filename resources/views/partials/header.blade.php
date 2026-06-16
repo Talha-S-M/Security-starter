@@ -5,8 +5,9 @@
         <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('home')) }}">Security Home</a>
 
         @guest
-            @if (\Illuminate\Support\Facades\Route::has('login'))
-                <a href="{{ route('login') }}">Login</a>
+            <a href="{{ route('login') }}">Login</a>
+            @if (config('security.auth.register', true))
+                <a href="{{ route('register') }}">Register</a>
             @endif
         @endguest
 
@@ -24,12 +25,10 @@
                 <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">Activity log</a>
             @endcan
 
-            @if (\Illuminate\Support\Facades\Route::has('logout'))
-                <form method="POST" action="{{ route('logout') }}" style="display:inline-block; margin: 0;">
-                    @csrf
-                    <button class="btn btn-secondary" type="submit">Logout</button>
-                </form>
-            @endif
+            <form method="POST" action="{{ route('logout') }}" style="display:inline-block; margin: 0;">
+                @csrf
+                <button class="btn btn-secondary" type="submit">Logout</button>
+            </form>
         @endauth
     </nav>
 </div>

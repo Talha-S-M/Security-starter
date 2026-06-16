@@ -194,6 +194,63 @@ Example iframe embed:
 
 All partials use the `pitb-security` CSS prefix so they won't clash with your styles. Override any file after publishing.
 
+## Authentication routes (login / register / logout / password reset)
+
+Fresh Laravel has no auth routes — this package registers standard ones at the **app root**:
+
+| URL | Route name |
+|-----|------------|
+| `/login` | `login` |
+| `/register` | `register` |
+| `/logout` (POST) | `logout` |
+| `/forgot-password` | `password.request` |
+| `/reset-password/{token}` | `password.reset` |
+
+Security enforcement routes (password expiry, MFA) stay under `/security/*`.
+
+Disable package auth if you add Breeze/Jetstream later:
+
+```env
+SECURITY_AUTH_ROUTES=false
+```
+
+### Registration MFA method
+
+During registration users choose MFA delivery:
+
+- `email` — OTP by mail
+- `sms` — OTP via PITB SMS gateway (phone required)
+
+```env
+SECURITY_MFA_METHODS=email,sms
+SECURITY_MFA_DEFAULT_METHOD=email
+SECURITY_MFA_ENABLED=true
+```
+
+### PITB SMS gateway
+
+MFA SMS uses the PITB gateway (with `sms_log` rate limiting):
+
+```env
+SECURITY_SMS_DRIVER=pitb
+SECURITY_SMS_SECRET_KEY=your-secret-key
+SECURITY_SMS_DISABLE_SEND=false
+SECURITY_SMS_LANGUAGE=urdu
+SECURITY_SMS_RATE_LIMIT_MINUTES=2
+```
+
+For local dev without sending real SMS:
+
+```env
+SECURITY_SMS_DRIVER=log
+```
+
+Run migrations after update:
+
+```bash
+php artisan migrate
+```
+
 ## CAPTCHA (login)
 
 Publish auth views and wire CAPTCHA into your login form:
@@ -206,7 +263,7 @@ php artisan vendor:publish --tag=security-views
 Embed the login partial in your page:
 
 ```blade
-@include('security::auth.partials.login-form', ['action' => route('login')])
+@include('security::auth.partials.login-form')
 ```
 
 Validate with the package request class (or add `ValidCaptcha` to your own `LoginRequest`):
@@ -397,6 +454,10 @@ SECURITY_SESSION_IDLE_MINUTES=20
 SECURITY_MFA_ENABLED=false
 SECURITY_CAPTCHA_ENABLED=true
 SECURITY_ACCESS_PROVISIONING=true
+SECURITY_SMS_DRIVER=pitb
+SECURITY_SMS_SECRET_KEY=
+SECURITY_SMS_DISABLE_SEND=false
+SECURITY_SMS_RATE_LIMIT_MINUTES=2
 SECURITY_LOCKOUT_ATTEMPTS=5
 SECURITY_LOCKOUT_MINUTES=30
 SECURITY_LOCKOUT_IP_ATTEMPTS=20

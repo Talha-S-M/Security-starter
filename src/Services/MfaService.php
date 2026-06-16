@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Pitbphp\Security\Notifications\MfaOtpNotification;
+use Pitbphp\Security\Notifications\MfaOtpSmsNotification;
 use Pitbphp\Security\Support\SecurityRequest;
 
 class MfaService
 {
-    public function issue(Authenticatable $user, ?string $tokenId = null): void
+    public function issue(Authenticatable $user, ?string $tokenId = null, string $sourceType = 'mfa_otp'): void
     {
         $length = (int) config('security.mfa.otp_length', 6);
         $otp = $this->generateOtp($length);
@@ -23,8 +24,30 @@ class MfaService
         );
 
         if (method_exists($user, 'notify')) {
-            $user->notify(new MfaOtpNotification($otp));
+            $this->sendOtp($user, $otp, $sourceType);
         }
+    }
+
+    public function preferredMethod(Authenticatable $user): string
+    {
+        $method = $user->mfa_method ?? config('security.mfa.default_method', 'email');
+
+        if (! in_array($method, config('security.mfa.methods', ['email', 'sms']), true)) {
+            return config('security.mfa.default_method', 'email');
+        }
+
+        return $method;
+    }
+
+    protected function sendOtp(Authenticatable $user, string $otp, string $sourceType = 'mfa_otp'): void
+    {
+        if ($this->preferredMethod($user) === 'sms') {
+            $user->notify(new MfaOtpSmsNotification($otp, $sourceType));
+
+            return;
+        }
+
+        $user->notify(new MfaOtpNotification($otp));
     }
 
     public function verify(Authenticatable $user, string $otp, ?string $tokenId = null): bool

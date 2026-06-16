@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in</title>
+    <title>Reset password</title>
 </head>
 <body>
     @include('security::partials.header')
 
-    <h1>Sign in</h1>
+    <h1>Reset password</h1>
 
-    @include('security::auth.partials.login-form')
+    @include('security::auth.partials.reset-password-form', compact('token', 'email'))
 </body>
 </html>

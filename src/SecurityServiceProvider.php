@@ -51,6 +51,7 @@ use Pitbphp\Security\Commands\SecurityDoctorCommand;
 use Pitbphp\Security\Commands\RecordLogReviewCommand;
 
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
+use Pitbphp\Security\Contracts\SmsGatewayInterface;
 
 use Pitbphp\Security\Listeners\AssignDefaultRole;
 use Pitbphp\Security\Listeners\LogAuthorizationEvents;
@@ -68,6 +69,8 @@ use Pitbphp\Security\Middleware\ForceHttps;
 
 use Pitbphp\Security\Middleware\RequireMfa;
 
+use Pitbphp\Security\Services\LogSmsGateway;
+use Pitbphp\Security\Services\PitbSmsGateway;
 use Pitbphp\Security\Services\SecurityEventLogger;
 
 use Pitbphp\Security\Support\SecurityRequest;
@@ -98,6 +101,13 @@ class SecurityServiceProvider extends ServiceProvider
 
             };
 
+        });
+
+        $this->app->singleton(SmsGatewayInterface::class, function () {
+            return match (config('security.sms.driver', 'pitb')) {
+                'log' => new LogSmsGateway(),
+                default => new PitbSmsGateway(),
+            };
         });
 
     }
@@ -145,6 +155,10 @@ class SecurityServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         if (in_array(SecurityRequest::mode(), ['web', 'hybrid'], true)) {
+            if (config('security.auth.enabled', true)) {
+                $this->loadRoutesFrom(__DIR__.'/../routes/auth.php');
+            }
+
             $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
 
             if (config('security.admin.enabled', true)) {

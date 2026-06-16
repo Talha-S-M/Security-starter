@@ -11,6 +11,10 @@
         </ul>
     @endif
 
+    @auth
+        <p class="muted">Code sent via {{ auth()->user()->mfaMethod() }}.</p>
+    @endauth
+
     <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('mfa.verify.submit')) }}">
         @csrf
         <label for="otp">Verification code</label>

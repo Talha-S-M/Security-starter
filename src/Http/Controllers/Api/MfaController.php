@@ -33,7 +33,7 @@ class MfaController extends Controller
         $user = Auth::user();
 
         if ($user) {
-            $mfa->issue($user, SecurityRequest::currentTokenId($request));
+            $mfa->issue($user, SecurityRequest::currentTokenId($request), 'resend_otp');
         }
 
         return SecurityResponder::apiSuccess('A new verification code has been sent.');

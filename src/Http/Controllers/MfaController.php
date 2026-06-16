@@ -59,7 +59,7 @@ class MfaController extends Controller
         $user = Auth::user();
 
         if ($user) {
-            $mfa->issue($user);
+            $mfa->issue($user, null, 'resend_otp');
             $request->session()->put('security.mfa_issued', true);
         }
 

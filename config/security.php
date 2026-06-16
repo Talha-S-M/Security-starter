@@ -72,6 +72,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Authentication Routes (login / register / logout / password reset)
+    |--------------------------------------------------------------------------
+    |
+    | Standard Laravel-style auth at app root (/login, /register, /logout).
+    | Disable if your app already provides Breeze/Jetstream/Fortify routes.
+    |
+    */
+
+    'auth' => [
+        'enabled' => (bool) env('SECURITY_AUTH_ROUTES', true),
+        'register' => (bool) env('SECURITY_AUTH_REGISTER', true),
+        'redirect_after_login' => env('SECURITY_AFTER_LOGIN_REDIRECT', '/'),
+        'redirect_after_register' => env('SECURITY_AFTER_REGISTER_REDIRECT', '/'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | PITB SMS Gateway
+    |--------------------------------------------------------------------------
+    */
+
+    'sms' => [
+        'driver' => env('SECURITY_SMS_DRIVER', 'pitb'),
+        'disable_send' => (bool) env('SECURITY_SMS_DISABLE_SEND', false),
+        'secret_key' => env('SECURITY_SMS_SECRET_KEY'),
+        'gateway_url' => env('SECURITY_SMS_GATEWAY_URL', 'https://smsgateway.pitb.gov.pk/api/send_sms'),
+        'default_language' => env('SECURITY_SMS_LANGUAGE', 'urdu'),
+        'rate_limit_minutes' => (int) env('SECURITY_SMS_RATE_LIMIT_MINUTES', 2),
+        'log_table' => env('SECURITY_SMS_LOG_TABLE', 'sms_log'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | User Model
     |--------------------------------------------------------------------------
     */
@@ -142,6 +175,11 @@ return [
         'idle_timeout_minutes' => (int) env('SECURITY_SESSION_IDLE_MINUTES', 20),
         'allowed_routes' => [
             'login',
+            'register',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.store',
             'logout',
             'security.mfa.verify',
             'security.mfa.verify.submit',
@@ -149,6 +187,13 @@ return [
             'security.password.expired',
             'security.password.update',
             'security.password.update.submit',
+        ],
+        'allowed_paths' => [
+            'login',
+            'register',
+            'forgot-password',
+            'reset-password',
+            'reset-password/*',
         ],
     ],
 
@@ -173,6 +218,8 @@ return [
         'enabled' => (bool) env('SECURITY_MFA_ENABLED', false),
         'otp_length' => (int) env('SECURITY_MFA_OTP_LENGTH', 6),
         'otp_expiry_minutes' => (int) env('SECURITY_MFA_OTP_EXPIRY', 5),
+        'default_method' => env('SECURITY_MFA_DEFAULT_METHOD', 'email'),
+        'methods' => array_filter(explode(',', env('SECURITY_MFA_METHODS', 'email,sms'))),
         'allowed_routes' => [
             'security.mfa.verify',
             'security.mfa.verify.submit',
@@ -190,7 +237,6 @@ return [
     'captcha' => [
         'enabled' => (bool) env('SECURITY_CAPTCHA_ENABLED', true),
         'field' => env('SECURITY_CAPTCHA_FIELD', 'captcha'),
-        'login_route' => env('SECURITY_LOGIN_ROUTE', 'login'),
     ],
 
     /*

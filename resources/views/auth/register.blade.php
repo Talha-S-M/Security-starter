@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in</title>
+    <title>Register</title>
 </head>
 <body>
     @include('security::partials.header')
 
-    <h1>Sign in</h1>
+    <h1>Create account</h1>
 
-    @include('security::auth.partials.login-form')
+    @include('security::auth.partials.register-form', [
+        'mfaMethods' => $mfaMethods ?? config('security.mfa.methods', ['email', 'sms']),
+    ])
 </body>
 </html>
