@@ -70,6 +70,7 @@ use Pitbphp\Security\Middleware\EnforceTokenTimeout;
 use Pitbphp\Security\Middleware\ForceHttps;
 
 use Pitbphp\Security\Middleware\RequireMfa;
+use Pitbphp\Security\Middleware\RequireMfaSetup;
 
 use Pitbphp\Security\Services\LogSmsGateway;
 use Pitbphp\Security\Services\PitbSmsGateway;
@@ -88,6 +89,7 @@ class SecurityServiceProvider extends ServiceProvider
     {
 
         $this->mergeConfigFrom(__DIR__.'/../config/security.php', 'security');
+        $this->mergeConfigFrom(__DIR__.'/../config/captcha.php', 'captcha');
 
         $this->app->booting(function () {
             VendorConfigAligner::apply();
@@ -129,6 +131,12 @@ class SecurityServiceProvider extends ServiceProvider
             __DIR__.'/../config/security.php' => config_path('security.php'),
 
         ], 'security-config');
+
+        $this->publishes([
+
+            __DIR__.'/../config/captcha.php' => config_path('captcha.php'),
+
+        ], 'security-captcha-config');
 
 
 
@@ -283,9 +291,8 @@ class SecurityServiceProvider extends ServiceProvider
 
 
         if (config('security.mfa.enabled')) {
-
+            $stack[] = RequireMfaSetup::class;
             $stack[] = RequireMfa::class;
-
         }
 
 
@@ -321,9 +328,8 @@ class SecurityServiceProvider extends ServiceProvider
 
 
         if (config('security.mfa.enabled')) {
-
+            $stack[] = RequireMfaSetup::class;
             $stack[] = RequireMfa::class;
-
         }
 
 

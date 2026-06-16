@@ -127,10 +127,35 @@ class AccessProvisioningService
     public function apply(AccessRequest $request): void
     {
         match ($request->type) {
+            AccessRequest::TYPE_USER_CREATE => $this->applyUserCreate($request),
             AccessRequest::TYPE_USER_UPDATE => $this->applyUserUpdate($request),
             AccessRequest::TYPE_ROLE_UPDATE => $this->applyRoleUpdate($request),
             default => null,
         };
+    }
+
+    protected function applyUserCreate(AccessRequest $request): void
+    {
+        $model = config('security.user.model');
+        $payload = $request->payload;
+
+        $user = (new $model)->newQuery()->create([
+            'name' => $payload['name'],
+            'email' => $payload['email'],
+            'password' => $payload['password'],
+            'is_active' => $payload['is_active'] ?? true,
+            'must_change_password' => $payload['must_change_password'] ?? true,
+            'password_changed_at' => $payload['password_changed_at'] ?? null,
+            'mfa_configured_at' => null,
+        ]);
+
+        if (isset($payload['roles']) && method_exists($user, 'syncRoles')) {
+            $user->syncRoles($payload['roles']);
+        }
+
+        $request->update([
+            'target_id' => (int) $user->getKey(),
+        ]);
     }
 
     protected function applyUserUpdate(AccessRequest $request): void

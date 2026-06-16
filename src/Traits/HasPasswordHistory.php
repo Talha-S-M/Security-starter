@@ -3,7 +3,6 @@
 namespace Pitbphp\Security\Traits;
 
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Pitbphp\Security\Contracts\PasswordHistorable;
 use Pitbphp\Security\Models\PasswordHistory;
 
 trait HasPasswordHistory

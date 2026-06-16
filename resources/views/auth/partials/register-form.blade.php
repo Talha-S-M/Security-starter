@@ -46,12 +46,23 @@
         <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="+923001234567">
     </div>
 
-    @if (config('security.captcha.enabled', true) && function_exists('captcha_img'))
+    @if (config('security.captcha.enabled', true) && function_exists('captcha_src'))
+        @php($captchaProfile = config('security.captcha.profile', 'flat'))
         <div class="field">
             <label for="captcha">CAPTCHA</label>
-            <div class="captcha-wrap">{!! captcha_img('flat') !!}</div>
+            <div class="captcha-wrap">
+                <img id="pitb-register-captcha-img" src="{{ captcha_src($captchaProfile) }}" alt="captcha" class="captcha-image">
+                <button type="button" class="btn btn-secondary captcha-refresh" onclick="pitbRefreshRegisterCaptcha()">Refresh</button>
+            </div>
             <input id="captcha" name="{{ config('security.captcha.field', 'captcha') }}" type="text" required autocomplete="off" placeholder="Enter characters from image">
         </div>
+        <script>
+            function pitbRefreshRegisterCaptcha() {
+                const img = document.getElementById('pitb-register-captcha-img');
+                const base = @json(captcha_src($captchaProfile));
+                img.src = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
+            }
+        </script>
     @endif
 
     <button class="btn btn-primary btn-block" type="submit">Register</button>

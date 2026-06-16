@@ -5,8 +5,10 @@ namespace Pitbphp\Security\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Pitbphp\Security\Models\AccessRequest;
+use Pitbphp\Security\Rules\PitbPassword;
 use Pitbphp\Security\Services\AccessProvisioningService;
 use Pitbphp\Security\Support\SecurityRoutes;
 
@@ -35,6 +37,79 @@ class UserManagementController extends Controller
             'users' => $users,
             'filters' => $request->only(['search']),
         ]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('security::admin.partials.user-create-form', [
+            'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
+            'requiresApproval' => $this->provisioning->requiresApproval($request->user()),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:'.config('security.user.table', 'users').',email'],
+            'password' => ['required', 'string', 'confirmed', new PitbPassword()],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['string', 'exists:roles,name'],
+            'justification' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if (isset($validated['roles'])
+            && method_exists($request->user(), 'hasRole')
+            && ! $request->user()->hasRole('super-admin')
+            && in_array('super-admin', $validated['roles'], true)) {
+            return back()->withErrors(['roles' => 'Only a super-admin may assign the super-admin role.'])->withInput();
+        }
+
+        $payload = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'roles' => $validated['roles'] ?? [config('security.permissions.default_user_role', 'user')],
+            'is_active' => true,
+            'must_change_password' => true,
+            'password_changed_at' => null,
+        ];
+
+        if ($this->provisioning->requiresApproval($request->user())) {
+            $request->validate(['justification' => ['required', 'string', 'max:1000']]);
+
+            $this->provisioning->submit(
+                $request->user(),
+                AccessRequest::TYPE_USER_CREATE,
+                config('security.user.model'),
+                0,
+                $payload,
+                $validated['justification'] ?? null
+            );
+
+            return redirect()
+                ->route(SecurityRoutes::adminName('partials.users'))
+                ->with('status', 'User creation request submitted for super-admin approval.');
+        }
+
+        $model = config('security.user.model');
+        $user = (new $model)->newQuery()->create([
+            'name' => $payload['name'],
+            'email' => $payload['email'],
+            'password' => $payload['password'],
+            'is_active' => true,
+            'must_change_password' => true,
+            'password_changed_at' => null,
+            'mfa_configured_at' => null,
+        ]);
+
+        if (method_exists($user, 'syncRoles')) {
+            $user->syncRoles($payload['roles']);
+        }
+
+        return redirect()
+            ->route(SecurityRoutes::adminName('partials.users'))
+            ->with('status', 'User created successfully. They must change password and configure MFA on first login.');
     }
 
     public function edit(Request $request, int $user): View

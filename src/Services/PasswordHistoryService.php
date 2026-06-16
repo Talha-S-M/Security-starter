@@ -5,22 +5,14 @@ namespace Pitbphp\Security\Services;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use Pitbphp\Security\Contracts\PasswordHistorable;
 use Pitbphp\Security\Models\PasswordHistory;
 
 class PasswordHistoryService
 {
     public function isEnabledFor(Model $model): bool
     {
-        if (in_array($model::class, config('security.password.history_models', []), true)) {
-            return true;
-        }
-
-        if ($model instanceof Authenticatable && method_exists($model, 'passwordHistories')) {
-            return true;
-        }
-
-        return $model instanceof PasswordHistorable;
+        return $model instanceof Authenticatable
+            && method_exists($model, 'passwordHistories');
     }
 
     public function wasRecentlyUsed(Model $model, string $plainPassword): bool
@@ -85,10 +77,6 @@ class PasswordHistoryService
      */
     protected function resolveMorph(Model $model): array
     {
-        if ($model instanceof PasswordHistorable) {
-            return [$model->getPasswordHistoryType(), $model->getPasswordHistoryIdentifier()];
-        }
-
         return [$model->getMorphClass(), $model->getKey()];
     }
 }

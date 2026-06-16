@@ -45,6 +45,8 @@ class VendorConfigAligner
             $months = (int) config('security.logging.retention.audit_trail_months', 12);
             config(['activitylog.delete_records_older_than_days' => max(1, $months * 30)]);
         }
+
+        CaptchaSupport::apply();
     }
 
     /**

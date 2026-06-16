@@ -182,6 +182,7 @@ Each partial has a route that returns ready-to-embed HTML:
 | Audit trail | `security.admin.partials.audit-trail` | `/security/admin/partials/audit-trail` |
 | Reviews | `security.admin.partials.reviews` | `/security/admin/partials/reviews` |
 | Users table | `security.admin.partials.users` | `/security/admin/partials/users` |
+| User create | `security.admin.partials.users.create` | `/security/admin/partials/users/create` |
 | User form | `security.admin.partials.users.edit` | `/security/admin/partials/users/{id}/edit` |
 | Roles table | `security.admin.partials.roles` | `/security/admin/partials/roles` |
 | Role form | `security.admin.partials.roles.edit` | `/security/admin/partials/roles/{id}/edit` |
@@ -207,6 +208,7 @@ Example iframe embed:
 | Audit trail | `partials/audit-trail.blade.php` |
 | Manual reviews | `partials/reviews.blade.php` |
 | Users table | `partials/users-table.blade.php` |
+| User create form | `partials/user-create-form.blade.php` |
 | User edit form | `partials/user-form.blade.php` |
 | Roles table | `partials/roles-table.blade.php` |
 | Role edit form | `partials/role-form.blade.php` |
@@ -216,19 +218,26 @@ Example iframe embed:
 
 All partials use the `pitb-security` CSS prefix so they won't clash with your styles. Override any file after publishing.
 
-## Authentication routes (login / register / logout / password reset)
+## Authentication routes (login / logout / password reset)
 
 Fresh Laravel has no auth routes — this package registers standard ones at the **app root**:
 
 | URL | Route name |
 |-----|------------|
 | `/login` | `login` |
-| `/register` | `register` |
 | `/logout` (POST) | `logout` |
 | `/forgot-password` | `password.request` |
 | `/reset-password/{token}` | `password.reset` |
 
-Security enforcement routes (password expiry, MFA) stay under `/security/*`.
+Public self-registration is **disabled by default**. Provision users from the admin partials (`users.create`) as super-admin, or as admin with super-admin approval.
+
+Enable public registration only if needed:
+
+```env
+SECURITY_AUTH_REGISTER=true
+```
+
+Security enforcement routes (password expiry, MFA setup, MFA verify) stay under `/security/*`.
 
 Disable package auth if you add Breeze/Jetstream later:
 
@@ -236,7 +245,22 @@ Disable package auth if you add Breeze/Jetstream later:
 SECURITY_AUTH_ROUTES=false
 ```
 
-### Registration MFA method
+### First login flow (provisioned users)
+
+When an admin creates a user with a temporary password:
+
+1. User signs in at `/login`
+2. Forced password change (`must_change_password`)
+3. MFA setup at `/security/mfa/setup` (MFA email can differ from account email)
+4. Normal MFA verification on future logins
+
+Enable MFA for this flow:
+
+```env
+SECURITY_MFA_ENABLED=true
+```
+
+### Registration MFA method (only when `SECURITY_AUTH_REGISTER=true`)
 
 During registration users choose MFA delivery:
 
@@ -296,7 +320,17 @@ use Pitbphp\Security\Http\Requests\SecurityLoginRequest;
 public function login(SecurityLoginRequest $request) { ... }
 ```
 
-Ensure `mews/captcha` is installed and its routes are registered (`CaptchaServiceProvider`). Set `SECURITY_CAPTCHA_ENABLED=true` in `.env`.
+Ensure `mews/captcha` is installed. The package ships a safe `captcha.php` (no background-image dependency) and stores optional assets on the `public` disk under `storage/app/public/captcha/backgrounds`.
+
+If you previously published the upstream mews config and see missing `assets/backgrounds` errors, republish:
+
+```bash
+php artisan security:publish-vendor-config --force
+php artisan storage:link
+php artisan config:clear
+```
+
+Login/register CAPTCHA includes a refresh button. Set `SECURITY_CAPTCHA_ENABLED=true` in `.env`.
 
 ## MFA (email OTP)
 
@@ -340,37 +374,9 @@ php artisan security:seed-rbac   # adds access-requests.* permissions
 
 Super-admins see **Pending access approvals** on the dashboard summary partial and can review at `/security/admin/partials/access-requests`.
 
-## Optional password history for other models (e.g. Client)
+## Password history
 
-Password history is **always enabled** for authenticated users with `HasPitbSecurity`.
-
-For other models like clients, add the model to config and use the trait:
-
-```php
-// config/security.php
-'history_models' => [
-    \App\Models\Client::class,
-],
-```
-
-```php
-use Pitbphp\Security\Traits\HasPasswordHistory;
-
-class Client extends Model
-{
-    use HasPasswordHistory;
-}
-```
-
-```php
-use Pitbphp\Security\Rules\PitbPassword;
-
-$request->validate([
-    'password' => ['required', 'confirmed', new PitbPassword($client)],
-]);
-
-app(PasswordHistoryService::class)->record($client, Hash::make($request->password));
-```
+Password reuse history is enabled for authenticated users via `HasPitbSecurity` only.
 
 ## Package routes (no conflicts)
 

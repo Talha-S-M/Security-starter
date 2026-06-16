@@ -14,6 +14,8 @@ class AccessRequest extends Model
 
     public const TYPE_USER_UPDATE = 'user_update';
 
+    public const TYPE_USER_CREATE = 'user_create';
+
     public const TYPE_ROLE_UPDATE = 'role_update';
 
     protected $fillable = [

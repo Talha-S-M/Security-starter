@@ -52,7 +52,9 @@
     }
     .pitb-security .checkbox-group label { font-weight: 400; display: flex; align-items: center; gap: .5rem; margin: .25rem 0; }
     .pitb-security nav a { display: inline-block; margin-right: .75rem; margin-bottom: .5rem; }
-    .pitb-security .captcha-wrap { margin: .25rem 0 .5rem; }
+        .pitb-security .captcha-wrap { margin: .25rem 0 .5rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .pitb-security .captcha-image { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+        .pitb-security .captcha-refresh { white-space: nowrap; }
     .pitb-security .auth-links { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #e2e8f0; font-size: .875rem; }
     .pitb-security .auth-links a { color: #2563eb; text-decoration: none; }
     .pitb-security .auth-links a:hover { text-decoration: underline; }

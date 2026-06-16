@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Pitbphp\Security\Notifications\MfaOtpNotification;
 use Pitbphp\Security\Notifications\MfaOtpSmsNotification;
 use Pitbphp\Security\Support\SecurityRequest;
@@ -47,7 +48,11 @@ class MfaService
             return;
         }
 
-        $user->notify(new MfaOtpNotification($otp));
+        $email = method_exists($user, 'mfaDeliveryEmail')
+            ? $user->mfaDeliveryEmail()
+            : $user->email;
+
+        Notification::route('mail', $email)->notify(new MfaOtpNotification($otp));
     }
 
     public function verify(Authenticatable $user, string $otp, ?string $tokenId = null): bool

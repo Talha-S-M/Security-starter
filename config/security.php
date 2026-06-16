@@ -75,14 +75,15 @@ return [
     | Authentication Routes (login / register / logout / password reset)
     |--------------------------------------------------------------------------
     |
-    | Standard Laravel-style auth at app root (/login, /register, /logout).
-    | Disable if your app already provides Breeze/Jetstream/Fortify routes.
+    | Standard Laravel-style auth at app root (/login, /logout).
+    | Public self-registration is disabled by default; provision users via admin.
+    | Disable auth routes entirely if your app uses Breeze/Jetstream/Fortify.
     |
     */
 
     'auth' => [
         'enabled' => (bool) env('SECURITY_AUTH_ROUTES', true),
-        'register' => (bool) env('SECURITY_AUTH_REGISTER', true),
+        'register' => (bool) env('SECURITY_AUTH_REGISTER', false),
         'redirect_after_login' => env('SECURITY_AFTER_LOGIN_REDIRECT', '/'),
         'redirect_after_register' => env('SECURITY_AFTER_REGISTER_REDIRECT', '/'),
     ],
@@ -127,17 +128,6 @@ return [
         'require_numbers' => true,
         'require_symbols' => true,
         'history_count' => (int) env('SECURITY_PASSWORD_HISTORY', 3),
-
-        /*
-        | Optional models that track password reuse history (in addition to
-        | authenticated users using HasPitbSecurity / HasPasswordHistory).
-        |
-        | Example: \App\Models\Client::class
-        */
-        'history_models' => [
-            //
-        ],
-
         'expiry_days' => (int) env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
         'allowed_routes' => [
             'security.password.expired',
@@ -181,6 +171,9 @@ return [
             'password.reset',
             'password.store',
             'logout',
+            'security.mfa.setup',
+            'security.mfa.setup.submit',
+            'security.mfa.setup.resend',
             'security.mfa.verify',
             'security.mfa.verify.submit',
             'security.mfa.resend',
@@ -194,6 +187,8 @@ return [
             'forgot-password',
             'reset-password',
             'reset-password/*',
+            'security/mfa/setup',
+            'security/mfa/setup/resend',
         ],
     ],
 
@@ -221,9 +216,18 @@ return [
         'default_method' => env('SECURITY_MFA_DEFAULT_METHOD', 'email'),
         'methods' => array_filter(explode(',', env('SECURITY_MFA_METHODS', 'email,sms'))),
         'allowed_routes' => [
+            'security.mfa.setup',
+            'security.mfa.setup.submit',
+            'security.mfa.setup.resend',
             'security.mfa.verify',
             'security.mfa.verify.submit',
             'security.mfa.resend',
+            'logout',
+        ],
+        'setup_allowed_routes' => [
+            'security.mfa.setup',
+            'security.mfa.setup.submit',
+            'security.mfa.setup.resend',
             'logout',
         ],
     ],
@@ -241,6 +245,7 @@ return [
     'captcha' => [
         'enabled' => (bool) env('SECURITY_CAPTCHA_ENABLED', true),
         'field' => env('SECURITY_CAPTCHA_FIELD', 'captcha'),
+        'profile' => env('SECURITY_CAPTCHA_PROFILE', 'flat'),
     ],
 
     /*
@@ -432,6 +437,7 @@ return [
             'security.session' => \Pitbphp\Security\Middleware\EnforceSessionTimeout::class,
             'security.token' => \Pitbphp\Security\Middleware\EnforceTokenTimeout::class,
             'security.mfa' => \Pitbphp\Security\Middleware\RequireMfa::class,
+            'security.mfa.setup' => \Pitbphp\Security\Middleware\RequireMfaSetup::class,
             'security.https' => \Pitbphp\Security\Middleware\ForceHttps::class,
         ],
     ],

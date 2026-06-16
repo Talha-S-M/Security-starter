@@ -19,9 +19,9 @@ class VendorConfigPublisher
 
         $map = [
             'captcha' => [
-                'provider' => 'Mews\Captcha\CaptchaServiceProvider',
+                'tag' => 'security-captcha-config',
                 'path' => config_path('captcha.php'),
-                'label' => 'mews/captcha',
+                'label' => 'pitbphp/security-starter captcha',
             ],
         ];
 

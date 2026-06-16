@@ -47,6 +47,14 @@ class PasswordController extends Controller
 
         $passwordHistory->record($user, $hashed);
 
+        if (config('security.mfa.enabled')
+            && method_exists($user, 'needsMfaSetup')
+            && $user->needsMfaSetup()) {
+            return redirect()
+                ->route(SecurityRoutes::name('mfa.setup'))
+                ->with('status', 'Password updated. Configure multi-factor authentication to continue.');
+        }
+
         return redirect()->intended('/')
             ->with('status', 'Your password has been updated successfully.');
     }

@@ -50,4 +50,18 @@ trait HasPitbSecurity
             ? $method
             : config('security.mfa.default_method', 'email');
     }
+
+    public function needsMfaSetup(): bool
+    {
+        if (! config('security.mfa.enabled')) {
+            return false;
+        }
+
+        return empty($this->mfa_configured_at);
+    }
+
+    public function mfaDeliveryEmail(): string
+    {
+        return (string) ($this->mfa_email ?: $this->email);
+    }
 }

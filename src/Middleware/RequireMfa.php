@@ -30,6 +30,10 @@ class RequireMfa
             return $next($request);
         }
 
+        if (method_exists($user, 'needsMfaSetup') && $user->needsMfaSetup()) {
+            return $next($request);
+        }
+
         $allowed = SecurityRequest::isApi($request)
             ? config('security.api.allowed_route_names', [])
             : config('security.mfa.allowed_routes', []);

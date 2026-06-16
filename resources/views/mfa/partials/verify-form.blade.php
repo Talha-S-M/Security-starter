@@ -11,7 +11,14 @@
 @endif
 
 @auth
-    <p class="muted">Code sent via {{ auth()->user()->mfaMethod() }}.</p>
+    <p class="muted">
+        Code sent via {{ auth()->user()->mfaMethod() }}
+        @if (auth()->user()->mfaMethod() === 'email')
+            to {{ auth()->user()->mfaDeliveryEmail() }}.
+        @else
+            .
+        @endif
+    </p>
 @endauth
 
 <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('mfa.verify.submit')) }}">

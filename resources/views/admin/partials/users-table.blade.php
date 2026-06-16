@@ -8,6 +8,9 @@
     <form class="filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}">
         <input type="text" name="search" placeholder="Name or email" value="{{ $filters['search'] ?? '' }}">
         <button class="btn btn-primary" type="submit">Search</button>
+        @can('users.create')
+            <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.create')) }}">Create user</a>
+        @endcan
     </form>
 
     <div class="card">

@@ -26,6 +26,12 @@ Route::prefix(SecurityRoutes::adminPath())
 
         Route::middleware('permission:users.view')->group(function () {
             Route::get('users', [UserManagementController::class, 'index'])->name('users');
+            Route::get('users/create', [UserManagementController::class, 'create'])
+                ->middleware('permission:users.create')
+                ->name('users.create');
+            Route::post('users', [UserManagementController::class, 'store'])
+                ->middleware('permission:users.create')
+                ->name('users.store');
             Route::get('users/{user}/edit', [UserManagementController::class, 'edit'])
                 ->middleware('permission:users.update')
                 ->name('users.edit');
