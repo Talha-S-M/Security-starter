@@ -358,23 +358,17 @@ class InstallSecurityCommand extends Command
 
 
         if (! $this->option('no-interaction') && ! $this->confirm("Install {$package} via Composer?", true)) {
-
             $this->warn("Skipped. Run manually: composer require {$package}");
-
-
-
             return;
-
         }
 
-
-
-        $process = Process::fromShellCommandline(
-
-            'composer require '.$package,
-
+        // No version constraint — let Composer resolve a version compatible with the host app.
+        $process = new Process(
+            array_merge(
+                $this->composerCommand(),
+                ['require', '--no-interaction', $package]
+            ),
             base_path()
-
         );
 
         $process->setTimeout(600);
@@ -392,6 +386,20 @@ class InstallSecurityCommand extends Command
     }
 
 
+
+    /**
+     * @return array<int, string>
+     */
+    protected function composerCommand(): array
+    {
+        $local = base_path('composer.phar');
+
+        if (is_file($local)) {
+            return [PHP_BINARY, $local];
+        }
+
+        return ['composer'];
+    }
 
     protected function updateEnv(string $key, string $value): void
 
