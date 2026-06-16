@@ -42,6 +42,16 @@ return [
             'security.api.mfa.verify',
             'security.api.mfa.resend',
         ],
+        'response' => [
+            'use_envelope' => (bool) env('SECURITY_API_RESPONSE_ENVELOPE', true),
+            'keys' => [
+                'code' => 'Code',
+                'success' => 'Success',
+                'message' => 'Message',
+                'description' => 'Description',
+                'content' => 'Content',
+            ],
+        ],
     ],
 
     /*

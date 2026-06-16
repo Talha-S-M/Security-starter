@@ -345,6 +345,32 @@ SECURITY_API_TOKEN_IDLE_MINUTES=20
 API security violations return JSON with an `error_code` (e.g. `password_expired`, `mfa_required`, `account_locked`). Tokens are revoked on account violations when `SECURITY_API_REVOKE_ON_VIOLATION=true`.
 In `api` or `hybrid` mode, middleware auto-detects API requests (Bearer token, API path, API route names, or JSON expectation) and consistently returns JSON errors.
 
+### API response envelope (optional)
+
+Security API responses can follow an envelope style similar to:
+`Code`, `Success`, `Message`, `Description`, `Content`.
+
+```env
+SECURITY_API_RESPONSE_ENVELOPE=true
+```
+
+Configure keys in `config/security.php`:
+
+```php
+'api' => [
+    'response' => [
+        'use_envelope' => true,
+        'keys' => [
+            'code' => 'Code',
+            'success' => 'Success',
+            'message' => 'Message',
+            'description' => 'Description',
+            'content' => 'Content',
+        ],
+    ],
+],
+```
+
 ### Example API flow
 
 ```bash

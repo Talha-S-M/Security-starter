@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Pitbphp\Security\Rules\PitbPassword;
 use Pitbphp\Security\Services\PasswordHistoryService;
+use Pitbphp\Security\Support\SecurityResponder;
 
 class PasswordController extends Controller
 {
@@ -35,16 +36,14 @@ class PasswordController extends Controller
 
         $passwordHistory->record($user, $hashed);
 
-        return response()->json([
-            'message' => 'Password updated successfully.',
-        ]);
+        return SecurityResponder::apiSuccess('Password updated successfully.');
     }
 
     public function status(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        return response()->json([
+        return SecurityResponder::apiSuccess(null, [
             'password_expired' => method_exists($user, 'isPasswordExpired')
                 ? $user->isPasswordExpired()
                 : false,
