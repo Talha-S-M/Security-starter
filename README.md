@@ -8,13 +8,13 @@ Laravel package implementing PITB Application Security Procedure controls.
 composer require pitbphp/security-starter
 ```
 
-After `composer require` or `composer update` changes this package, Composer will ask whether to run setup now. Confirm to launch `php artisan security:install` automatically (interactive terminals only).
-
-You can also run setup manually:
+After the **first** `composer require`, Composer will ask whether to run setup now (interactive terminals only). Subsequent package updates will not prompt again. You can always run setup manually:
 
 ```bash
 php artisan security:install
 ```
+
+A marker file is written to `storage/app/pitb-security-installed` when install completes. Existing setups with `config/security.php` are also treated as already installed.
 
 This will (once):
 

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
+use Pitbphp\Security\Support\InstallMarker;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
 use Symfony\Component\Process\Process;
@@ -93,7 +94,7 @@ class InstallSecurityCommand extends Command
         $this->line('Default roles: super-admin, admin, manager, user, vendor.');
         $this->line('Partial routes: /'.config('security.admin.path_prefix', 'security/admin/partials'));
 
-
+        InstallMarker::write();
 
         return self::SUCCESS;
 

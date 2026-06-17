@@ -7,12 +7,10 @@ use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\DependencyResolver\Operation\InstallOperation;
-use Composer\DependencyResolver\Operation\UpdateOperation;
-use Composer\Script\Event as ScriptEvent;
 use Composer\Script\ScriptEvents;
+use Pitbphp\Security\Support\InstallMarker;
 use Symfony\Component\Process\Process;
 
 class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
@@ -23,7 +21,7 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 
     private IOInterface $io;
 
-    private bool $packageChanged = false;
+    private bool $packageInstalled = false;
 
     public function activate(Composer $composer, IOInterface $io): void
     {
@@ -38,18 +36,21 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            PackageEvents::POST_PACKAGE_INSTALL => 'onPackageChange',
-            PackageEvents::POST_PACKAGE_UPDATE => 'onPackageChange',
-            ScriptEvents::POST_INSTALL_CMD => 'onPostComposerCommand',
-            ScriptEvents::POST_UPDATE_CMD => 'onPostComposerCommand',
+            PackageEvents::POST_PACKAGE_INSTALL => 'onPackageInstalled',
+            ScriptEvents::POST_INSTALL_CMD => 'onPostComposerInstall',
+            ScriptEvents::POST_UPDATE_CMD => 'onPostComposerInstall',
         ];
     }
 
-    public function onPackageChange(PackageEvent $event): void
+    public function onPackageInstalled(PackageEvent $event): void
     {
-        $package = $this->resolvePackageFromOperation($event);
+        if (! $event->getOperation() instanceof InstallOperation) {
+            return;
+        }
 
-        if (! $package || $package->getName() !== self::PACKAGE) {
+        $package = $event->getOperation()->getPackage();
+
+        if ($package->getName() !== self::PACKAGE) {
             return;
         }
 
@@ -57,28 +58,33 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
-        $this->packageChanged = true;
+        $this->packageInstalled = true;
     }
 
-    public function onPostComposerCommand(ScriptEvent $event): void
+    public function onPostComposerInstall(): void
     {
-        if (! $this->packageChanged) {
+        if (! $this->packageInstalled) {
             return;
         }
 
-        $this->packageChanged = false;
+        $this->packageInstalled = false;
 
         if ($this->composer->getPackage()->getName() === self::PACKAGE) {
             return;
         }
 
-        $artisan = $this->artisanPath();
+        $basePath = $this->applicationBasePath();
+        $artisan = $this->artisanPath($basePath);
 
         if ($artisan === null) {
             $this->io->write(
                 '<comment>pitbphp/security-starter installed, but no artisan file was found. Run security:install from your Laravel app root when ready.</comment>'
             );
 
+            return;
+        }
+
+        if (InstallMarker::exists($basePath)) {
             return;
         }
 
@@ -103,7 +109,7 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 
         $this->io->write('<info>Running php artisan security:install...</info>');
 
-        $process = new Process([PHP_BINARY, $artisan, 'security:install'], dirname($artisan));
+        $process = new Process([PHP_BINARY, $artisan, 'security:install'], $basePath);
         $process->setTimeout(null);
 
         if (Process::isTtySupported()) {
@@ -121,26 +127,16 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
         }
     }
 
-    protected function artisanPath(): ?string
+    protected function applicationBasePath(): string
     {
-        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-        $artisan = dirname($vendorDir).DIRECTORY_SEPARATOR.'artisan';
-
-        return is_file($artisan) ? $artisan : null;
+        return dirname($this->composer->getConfig()->get('vendor-dir'));
     }
 
-    protected function resolvePackageFromOperation(PackageEvent $event): ?PackageInterface
+    protected function artisanPath(?string $basePath = null): ?string
     {
-        $operation = $event->getOperation();
+        $basePath ??= $this->applicationBasePath();
+        $artisan = $basePath.DIRECTORY_SEPARATOR.'artisan';
 
-        if ($operation instanceof InstallOperation) {
-            return $operation->getPackage();
-        }
-
-        if ($operation instanceof UpdateOperation) {
-            return $operation->getTargetPackage();
-        }
-
-        return null;
+        return is_file($artisan) ? $artisan : null;
     }
 }
