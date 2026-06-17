@@ -39,6 +39,8 @@
                 <input id="password_confirmation" name="password_confirmation" type="password" required>
             </div>
 
+            @include('security::auth.partials.password-strength')
+
             <div class="field">
                 <label>Roles</label>
                 @foreach ($roles as $role)

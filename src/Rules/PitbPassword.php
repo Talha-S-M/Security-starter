@@ -3,10 +3,10 @@
 namespace Pitbphp\Security\Rules;
 
 use Closure;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Database\Eloquent\Model;
 use Pitbphp\Security\Services\PasswordHistoryService;
+use Pitbphp\Security\Support\PasswordStrength;
 
 class PitbPassword implements ValidationRule
 {
@@ -16,26 +16,10 @@ class PitbPassword implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $rule = Password::min((int) config('security.password.min_length', 12));
+        $message = PasswordStrength::firstViolation((string) $value);
 
-        if (config('security.password.require_uppercase') && config('security.password.require_lowercase')) {
-            $rule->mixedCase();
-        } elseif (config('security.password.require_uppercase') || config('security.password.require_lowercase')) {
-            $rule->letters();
-        }
-
-        if (config('security.password.require_numbers')) {
-            $rule->numbers();
-        }
-
-        if (config('security.password.require_symbols')) {
-            $rule->symbols();
-        }
-
-        $validator = validator([$attribute => $value], [$attribute => $rule]);
-
-        if ($validator->fails()) {
-            $fail($validator->errors()->first($attribute));
+        if ($message !== null) {
+            $fail($message);
 
             return;
         }

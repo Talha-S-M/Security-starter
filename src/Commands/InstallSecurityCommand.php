@@ -9,6 +9,7 @@ namespace Pitbphp\Security\Commands;
 use Illuminate\Console\Command;
 
 use Pitbphp\Security\Support\AuditingPackageResolver;
+use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
 use Symfony\Component\Process\Process;
@@ -71,10 +72,11 @@ class InstallSecurityCommand extends Command
 
         $this->publishAssets();
         $this->publishVendorConfigs($driver);
+        $this->publishAuditingMigrations($driver);
 
         $this->runPackageMigrations();
 
-        $this->runPermissionMigrations();
+        $this->runApplicationMigrations();
 
         $this->seedRbacDefaults();
 
@@ -195,6 +197,14 @@ class InstallSecurityCommand extends Command
 
         ]);
 
+        $this->call('vendor:publish', [
+
+            '--tag' => 'security-assets',
+
+            '--force' => $force,
+
+        ]);
+
     }
 
     protected function publishVendorConfigs(string $auditDriver): void
@@ -244,28 +254,24 @@ class InstallSecurityCommand extends Command
 
 
 
-    protected function runPermissionMigrations(): void
-
+    protected function publishAuditingMigrations(string $auditDriver): void
     {
-
-        if (! config('security.permissions.enabled', true)) {
-
+        if ($auditDriver === 'none') {
             return;
-
         }
 
+        $this->info('Publishing auditing package migrations...');
 
+        AuditingMigrationPublisher::publish($this, $auditDriver, (bool) $this->option('force'));
+    }
 
-        $this->info('Running permission table migrations...');
-
-
+    protected function runApplicationMigrations(): void
+    {
+        $this->info('Running application migrations (permissions, activity log, etc.)...');
 
         $this->call('migrate', [
-
             '--force' => $this->option('force'),
-
         ]);
-
     }
 
 

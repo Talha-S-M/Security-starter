@@ -35,6 +35,8 @@
         <input id="password_confirmation" name="password_confirmation" type="password" required>
     </div>
 
+    @include('security::auth.partials.password-strength')
+
     @include('security::auth.partials.captcha-field', ['captchaId' => 'pitb-register-captcha-img'])
 
     <button class="btn btn-primary btn-block" type="submit">Submit for approval</button>

@@ -45,9 +45,7 @@
                     <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
                 </div>
 
-                <p class="muted">
-                    Minimum {{ config('security.password.min_length', 12) }} characters with uppercase, lowercase, numbers, and symbols.
-                </p>
+                @include('security::auth.partials.password-strength')
 
                 <button class="btn btn-primary btn-block" type="submit">Save password</button>
             </form>

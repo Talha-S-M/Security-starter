@@ -5,6 +5,7 @@ namespace Pitbphp\Security\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\SecurityRoutes;
 use Pitbphp\Security\Support\VendorConfigAligner;
 
@@ -28,8 +29,16 @@ class SecurityDoctorCommand extends Command
         $driver = (string) config('security.auditing.driver', 'activitylog');
         if ($driver === 'activitylog') {
             $failed = ! $this->checkClass(\Spatie\Activitylog\Models\Activity::class, 'Activitylog package installed') || $failed;
+            $table = AuditingMigrationPublisher::requiredTable($driver);
+            if ($table) {
+                $failed = ! $this->checkTable($table, "Activitylog table [{$table}] migrated") || $failed;
+            }
         } elseif ($driver === 'auditing') {
             $failed = ! $this->checkClass(\OwenIt\Auditing\Models\Audit::class, 'Owen-It auditing package installed') || $failed;
+            $table = AuditingMigrationPublisher::requiredTable($driver);
+            if ($table) {
+                $failed = ! $this->checkTable($table, "Auditing table [{$table}] migrated") || $failed;
+            }
         }
 
         $failed = ! $this->checkTable('security_events', 'Security events table migrated') || $failed;
@@ -55,6 +64,9 @@ class SecurityDoctorCommand extends Command
         $this->newLine();
         if ($failed) {
             $this->error('Security doctor found issues. Run `php artisan security:install` or apply the suggested fixes.');
+            if ($driver === 'activitylog') {
+                $this->line('Missing activity_log? Run: php artisan security:publish-vendor-config --driver=activitylog && php artisan migrate');
+            }
             return self::FAILURE;
         }
 

@@ -23,6 +23,7 @@
     .pitb-security .btn { display: inline-block; padding: .5rem .875rem; border-radius: .375rem; border: 0; cursor: pointer; font-size: .875rem; text-decoration: none; line-height: 1.25; }
     .pitb-security .btn-primary { background: #2563eb; color: #fff; }
     .pitb-security .btn-primary:hover { background: #1d4ed8; }
+    .pitb-security .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
     .pitb-security .btn-secondary { background: #e2e8f0; color: #0f172a; }
     .pitb-security .btn-block { width: 100%; text-align: center; margin-top: .25rem; }
     .pitb-security .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
@@ -58,4 +59,21 @@
     .pitb-security .auth-links { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #e2e8f0; font-size: .875rem; }
     .pitb-security .auth-links a { color: #2563eb; text-decoration: none; }
     .pitb-security .auth-links a:hover { text-decoration: underline; }
+
+    .pitb-security .pitb-password-strength { margin: .5rem 0 1rem; }
+    .pitb-security .pitb-password-strength__bar { height: .35rem; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .pitb-security .pitb-password-strength__fill { height: 100%; width: 0; border-radius: inherit; transition: width .2s ease, background-color .2s ease; background: #ef4444; }
+    .pitb-security .pitb-password-strength__fill[data-strength="fair"] { background: #f59e0b; }
+    .pitb-security .pitb-password-strength__fill[data-strength="good"] { background: #3b82f6; }
+    .pitb-security .pitb-password-strength__fill[data-strength="strong"] { background: #16a34a; }
+    .pitb-security .pitb-password-strength__label { margin: .5rem 0 .25rem; font-size: .8125rem; }
+    .pitb-security .pitb-password-strength__rules { list-style: none; margin: 0; padding: 0; font-size: .8125rem; }
+    .pitb-security .pitb-password-strength__rules li { padding: .15rem 0 .15rem 1.25rem; position: relative; color: #64748b; }
+    .pitb-security .pitb-password-strength__rules li::before { content: '○'; position: absolute; left: 0; }
+    .pitb-security .pitb-password-strength__rules li.is-passed { color: #166534; }
+    .pitb-security .pitb-password-strength__rules li.is-passed::before { content: '✓'; }
+    .pitb-security .pitb-password-strength__rules li.is-failed::before { content: '○'; color: #94a3b8; }
+    .pitb-security .pitb-password-strength__status { margin: .5rem 0 0; font-size: .8125rem; font-weight: 600; }
+    .pitb-security .pitb-password-strength__status.is-valid { color: #166534; }
+    .pitb-security .pitb-password-strength__status.is-invalid { color: #b45309; }
 </style>

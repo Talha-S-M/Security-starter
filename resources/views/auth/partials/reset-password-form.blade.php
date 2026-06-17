@@ -26,5 +26,7 @@
         <input id="password_confirmation" name="password_confirmation" type="password" required>
     </div>
 
+    @include('security::auth.partials.password-strength')
+
     <button class="btn btn-primary btn-block" type="submit">Reset password</button>
 </form>

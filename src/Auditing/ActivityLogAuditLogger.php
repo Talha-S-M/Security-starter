@@ -16,7 +16,7 @@ class ActivityLogAuditLogger implements AuditLoggerInterface
         ?Model $causer = null
     ): void {
         if (! function_exists('activity')) {
-            return;
+            throw new \RuntimeException('Spatie Activitylog is not installed but SECURITY_AUDIT_DRIVER=activitylog.');
         }
 
         $logger = activity('security');

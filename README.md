@@ -20,8 +20,9 @@ This will (once):
 2. Ask which runtime mode to secure (`web`, `api`, or `hybrid`)
 3. Install the matching Composer package with a Laravel-compatible version
 4. Publish config, views, migrations, and **dependency configs** (`captcha.php`, `permission.php`, `activitylog.php` or `audit.php`)
-5. Run package and permission migrations
-6. Seed default PITB roles and permissions
+5. Publish and run auditing package migrations (`activity_log` or `audits` table)
+6. Run package and permission migrations
+7. Seed default PITB roles and permissions
 
 Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
 
@@ -30,6 +31,7 @@ Re-publish dependency configs only (without re-running full install):
 ```bash
 php artisan security:publish-vendor-config
 # or: php artisan security:publish-vendor-config --driver=activitylog --force
+php artisan migrate
 ```
 
 **`config/security.php` is the source of truth** for feature toggles. Vendor configs (`captcha.php`, `activitylog.php`, `permission.php`, `audit.php`) hold package-specific settings only.
@@ -370,6 +372,51 @@ Super-admins see **Pending access approvals** on the dashboard summary partial a
 ## Password history
 
 Password reuse history is enabled for authenticated users via `HasPitbSecurity` only.
+
+## Password strength (client-side)
+
+Live password feedback runs entirely in the browser — no per-keystroke server requests. Policy values from `config/security.php` are embedded once in the page as JSON; validation on submit still uses the `PitbPassword` rule server-side.
+
+**Blade partial** (included on register, reset-password, password update, and admin user-create forms):
+
+```blade
+@include('security::auth.partials.password-strength')
+```
+
+Optional parameters: `passwordId`, `confirmationId`, `requireConfirmation` (default `true`).
+
+**Standalone JS** (e.g. custom SPA or Vite bundle):
+
+```html
+<script src="{{ asset('vendor/pitb-security/js/pitb-password-strength.js') }}" defer></script>
+<script>
+  const result = PitbPasswordStrength.analyze('MyPass123!', 'MyPass123!', {
+    min_length: 12,
+    require_uppercase: true,
+    require_lowercase: true,
+    require_numbers: true,
+    require_symbols: true,
+  });
+  // result.valid, result.strength, result.score, result.rules
+</script>
+```
+
+Or bind to a widget:
+
+```html
+<div data-pitb-password-strength data-password-id="password" data-policy='@json(\Pitbphp\Security\Support\PasswordStrength::policy())'>
+  ...
+</div>
+```
+
+Publish static assets:
+
+```bash
+php artisan vendor:publish --tag=security-assets
+# → public/vendor/pitb-security/js/pitb-password-strength.js
+```
+
+`security:install` publishes this tag automatically.
 
 ## Package routes (no conflicts)
 

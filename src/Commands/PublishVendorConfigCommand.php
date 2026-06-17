@@ -3,6 +3,7 @@
 namespace Pitbphp\Security\Commands;
 
 use Illuminate\Console\Command;
+use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
 class PublishVendorConfigCommand extends Command
@@ -25,8 +26,9 @@ class PublishVendorConfigCommand extends Command
         }
 
         VendorConfigPublisher::publish($this, $driver, (bool) $this->option('force'));
+        AuditingMigrationPublisher::publish($this, $driver, (bool) $this->option('force'));
 
-        $this->info('Vendor config publish complete. Feature toggles are driven by config/security.php.');
+        $this->info('Vendor config publish complete. Run `php artisan migrate` if auditing migrations were published.');
 
         return self::SUCCESS;
     }
