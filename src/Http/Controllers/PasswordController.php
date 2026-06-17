@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Pitbphp\Security\Rules\PitbPassword;
 use Pitbphp\Security\Services\PasswordHistoryService;
+use Pitbphp\Security\Services\SecurityEventLogger;
 use Pitbphp\Security\Support\SecurityRoutes;
 
 class PasswordController extends Controller
@@ -24,7 +25,7 @@ class PasswordController extends Controller
         return view('security::password.update');
     }
 
-    public function update(Request $request, PasswordHistoryService $passwordHistory): RedirectResponse
+    public function update(Request $request, PasswordHistoryService $passwordHistory, SecurityEventLogger $logger): RedirectResponse
     {
         $user = Auth::user();
 
@@ -40,12 +41,18 @@ class PasswordController extends Controller
 
         $hashed = Hash::make($validated['password']);
 
+        $forcedChange = (bool) ($user->must_change_password ?? false);
+
         $user->password = $hashed;
         $user->password_changed_at = now();
         $user->must_change_password = false;
         $user->save();
 
         $passwordHistory->record($user, $hashed);
+
+        $logger->auth('auth.password_changed', true, $user, [
+            'forced_change' => $forcedChange,
+        ]);
 
         if (config('security.mfa.enabled')
             && method_exists($user, 'needsMfaSetup')

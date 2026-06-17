@@ -6,9 +6,10 @@
 <div class="card panel">
     <h2 class="panel__title">Event details</h2>
     <dl class="detail-grid">
-        <div class="detail-row"><dt>Type</dt><dd>{{ $event->event_type }}</dd></div>
+        <div class="detail-row"><dt>Actor</dt><dd>{{ \Pitbphp\Security\Support\SecurityActorPresenter::causerForEvent($event) }}</dd></div>
+        <div class="detail-row"><dt>Subject</dt><dd>{{ \Pitbphp\Security\Support\SecurityActorPresenter::subjectForEvent($event) }}</dd></div>
         <div class="detail-row"><dt>Time</dt><dd>{{ $event->created_at }}</dd></div>
-        <div class="detail-row"><dt>User ID</dt><dd>{{ $event->user_id ?? '—' }}</dd></div>
+        <div class="detail-row"><dt>Event</dt><dd>{{ $event->event_type }}</dd></div>
         <div class="detail-row"><dt>IP address</dt><dd>{{ $event->ip_address ?? '—' }}</dd></div>
         <div class="detail-row"><dt>User agent</dt><dd>{{ $event->user_agent ?? '—' }}</dd></div>
         <div class="detail-row">

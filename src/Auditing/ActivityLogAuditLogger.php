@@ -19,7 +19,7 @@ class ActivityLogAuditLogger implements AuditLoggerInterface
             throw new \RuntimeException('Spatie Activitylog is not installed but SECURITY_AUDIT_DRIVER=activitylog.');
         }
 
-        $logger = activity('security');
+        $logger = activity('rbac');
 
         if ($subject) {
             $logger->performedOn($subject);

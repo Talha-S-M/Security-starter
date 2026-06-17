@@ -36,6 +36,14 @@ class LoginAttemptService
 
         if ($attempts >= $max) {
             $updates['locked_until'] = now()->addMinutes($lockMinutes);
+
+            if (class_exists(\Pitbphp\Security\Services\SecurityEventLogger::class)) {
+                app(\Pitbphp\Security\Services\SecurityEventLogger::class)->auth('auth.account_locked', false, $user, [
+                    'attempts' => $attempts,
+                    'locked_until' => $updates['locked_until']->toIso8601String(),
+                    'email' => $identifier,
+                ]);
+            }
         }
 
         $this->updateUser($user, $updates);

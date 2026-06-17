@@ -34,7 +34,7 @@
                         @can('audit-logs.view')
                             <a class="stat-card" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}" style="text-decoration:none;color:inherit;">
                                 <div class="stat-card__label">Security events</div>
-                                <div class="stat-card__value" style="font-size:1rem;">View activity</div>
+                                <div class="stat-card__value" style="font-size:1rem;">Auth &amp; access</div>
                             </a>
                         @endcan
                     @else

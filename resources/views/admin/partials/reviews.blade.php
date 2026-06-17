@@ -17,7 +17,7 @@
                     <tr>
                         <td>{{ $review->id }}</td>
                         <td>{{ $review->type }}</td>
-                        <td>{{ $review->performed_by }}</td>
+                        <td>{{ $review->performer_label ?? ('User #'.$review->performed_by) }}</td>
                         <td>{{ $review->performed_at }}</td>
                         <td>{{ \Illuminate\Support\Str::limit($review->notes, 80) }}</td>
                     </tr>

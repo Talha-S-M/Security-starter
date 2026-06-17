@@ -13,7 +13,7 @@ class NullAuditLogger implements AuditLoggerInterface
         ?Model $subject = null,
         ?Model $causer = null
     ): void {
-        // Intentionally no-op; security_events table handles auth events.
+        // Intentionally no-op when SECURITY_AUDIT_DRIVER=none; RBAC events are not stored.
     }
 
     public function prune(\DateTimeInterface $before): int

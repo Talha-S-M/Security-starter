@@ -65,7 +65,7 @@ class RoleController extends Controller
                 ->with('status', 'Permission changes submitted for super-admin approval.');
         }
 
-        $role->syncPermissions($payload['permissions']);
+        $this->provisioning->updateRolePermissions($role, $payload['permissions']);
 
         return redirect()
             ->route(SecurityRoutes::adminName('partials.roles'))

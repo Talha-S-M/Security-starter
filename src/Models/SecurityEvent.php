@@ -3,6 +3,7 @@
 namespace Pitbphp\Security\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SecurityEvent extends Model
 {
@@ -19,4 +20,11 @@ class SecurityEvent extends Model
         'success' => 'boolean',
         'properties' => 'array',
     ];
+
+    public function user(): BelongsTo
+    {
+        $model = config('security.user.model');
+
+        return $this->belongsTo($model, 'user_id');
+    }
 }

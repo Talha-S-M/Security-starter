@@ -4,6 +4,7 @@ namespace Pitbphp\Security\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Pitbphp\Security\Models\AccessRequest;
 use Pitbphp\Security\Notifications\PendingAccessRequestNotification;
 use Illuminate\Support\Facades\Notification;
@@ -73,9 +74,10 @@ class AccessProvisioningService
         ];
     }
 
-    public function createUser(array $payload): Model
+    public function createUser(array $payload, ?Authenticatable $causer = null): Model
     {
         $model = config('security.user.model');
+        $causer ??= Auth::user();
 
         $user = (new $model)->newQuery()->create([
             'name' => $payload['name'],
@@ -91,7 +93,69 @@ class AccessProvisioningService
             $user->syncRoles($payload['roles']);
         }
 
+        app(SecurityEventLogger::class)->rbac('user.created', true, $user, $causer, [
+            'target' => [
+                'id' => $user->getKey(),
+                'name' => $user->name ?? null,
+                'email' => $user->email ?? null,
+                'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->values()->all() : ($payload['roles'] ?? []),
+            ],
+            'roles' => $payload['roles'] ?? [],
+        ]);
+
         return $user;
+    }
+
+    public function updateUser(Model $user, array $payload, ?Authenticatable $causer = null): void
+    {
+        $causer ??= Auth::user();
+        $changes = [];
+
+        if (isset($payload['roles']) && method_exists($user, 'syncRoles')) {
+            $before = method_exists($user, 'getRoleNames') ? $user->getRoleNames()->values()->all() : [];
+            $user->syncRoles($payload['roles']);
+            $changes['roles'] = [
+                'from' => $before,
+                'to' => array_values($payload['roles']),
+            ];
+        }
+
+        $updates = array_intersect_key($payload, array_flip([
+            'is_active', 'access_expires_at', 'must_change_password',
+        ]));
+
+        if ($updates !== []) {
+            $user->update($updates);
+            $changes = array_merge($changes, $updates);
+        }
+
+        if ($changes === []) {
+            return;
+        }
+
+        app(SecurityEventLogger::class)->rbac('user.updated', true, $user, $causer, [
+            'target' => [
+                'id' => $user->getKey(),
+                'name' => $user->name ?? null,
+                'email' => $user->email ?? null,
+                'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->values()->all() : [],
+            ],
+            'changes' => $changes,
+        ]);
+    }
+
+    public function updateRolePermissions(Role $role, array $permissions, ?Authenticatable $causer = null): void
+    {
+        $causer ??= Auth::user();
+        $before = $role->permissions()->pluck('name')->values()->all();
+
+        $role->syncPermissions($permissions);
+
+        app(SecurityEventLogger::class)->rbac('role.permissions.updated', true, $role, $causer, [
+            'role' => $role->name,
+            'permissions_from' => $before,
+            'permissions_to' => array_values($permissions),
+        ]);
     }
 
     public function submit(
@@ -119,6 +183,8 @@ class AccessProvisioningService
             'type' => $type,
             'target_type' => $targetType,
             'target_id' => $targetId,
+            'target' => $this->payloadTargetSnapshot($payload),
+            'justification' => $justification,
         ]);
 
         return $request;
@@ -140,7 +206,9 @@ class AccessProvisioningService
 
         app(SecurityEventLogger::class)->auth('registration.submitted', true, null, [
             'request_id' => $request->id,
+            'target' => $this->payloadTargetSnapshot($payload),
             'email' => $payload['email'] ?? null,
+            'name' => $payload['name'] ?? null,
         ]);
 
         return $request;
@@ -172,6 +240,11 @@ class AccessProvisioningService
 
         app(SecurityEventLogger::class)->rbac('access_request.approved', true, $reviewer, $reviewer, [
             'request_id' => $request->id,
+            'type' => $request->type,
+            'target_type' => $request->target_type,
+            'target_id' => $request->target_id,
+            'target' => $this->payloadTargetSnapshot($request->payload ?? []),
+            'review_notes' => $notes,
         ]);
     }
 
@@ -190,6 +263,10 @@ class AccessProvisioningService
 
         app(SecurityEventLogger::class)->rbac('access_request.rejected', true, $reviewer, $reviewer, [
             'request_id' => $request->id,
+            'type' => $request->type,
+            'target_type' => $request->target_type,
+            'target_id' => $request->target_id,
+            'target' => $this->payloadTargetSnapshot($request->payload ?? []),
             'notes' => $notes,
         ]);
     }
@@ -207,7 +284,7 @@ class AccessProvisioningService
 
     protected function applyUserCreate(AccessRequest $request): void
     {
-        $user = $this->createUser($request->payload);
+        $user = $this->createUser($request->payload, Auth::user());
 
         $request->update([
             'target_id' => (int) $user->getKey(),
@@ -218,19 +295,8 @@ class AccessProvisioningService
     {
         $model = config('security.user.model');
         $user = (new $model)->newQuery()->findOrFail($request->target_id);
-        $payload = $request->payload;
 
-        if (isset($payload['roles']) && method_exists($user, 'syncRoles')) {
-            $user->syncRoles($payload['roles']);
-        }
-
-        $updates = array_intersect_key($payload, array_flip([
-            'is_active', 'access_expires_at', 'must_change_password',
-        ]));
-
-        if ($updates !== []) {
-            $user->update($updates);
-        }
+        $this->updateUser($user, $request->payload, Auth::user());
     }
 
     protected function applyRoleUpdate(AccessRequest $request): void
@@ -241,7 +307,26 @@ class AccessProvisioningService
             return;
         }
 
-        $role->syncPermissions($request->payload['permissions'] ?? []);
+        $this->updateRolePermissions($role, $request->payload['permissions'] ?? [], Auth::user());
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>|null
+     */
+    protected function payloadTargetSnapshot(array $payload): ?array
+    {
+        if ($payload === []) {
+            return null;
+        }
+
+        return [
+            'id' => $payload['target_user_id'] ?? null,
+            'name' => $payload['name'] ?? null,
+            'email' => $payload['email'] ?? null,
+            'roles' => $payload['roles'] ?? [],
+            'role' => $payload['role'] ?? null,
+        ];
     }
 
     protected function notifyApprovers(AccessRequest $request): void

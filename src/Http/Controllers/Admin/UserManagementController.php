@@ -164,7 +164,7 @@ class UserManagementController extends Controller
                 ->with('status', 'Changes submitted for super-admin approval.');
         }
 
-        $this->applyUserChanges($record, $payload);
+        $this->provisioning->updateUser($record, $payload);
 
         return redirect()
             ->route(SecurityRoutes::adminName('partials.users'))
@@ -192,20 +192,5 @@ class UserManagementController extends Controller
         }
 
         return $payload;
-    }
-
-    protected function applyUserChanges($record, array $payload): void
-    {
-        if (isset($payload['roles']) && method_exists($record, 'syncRoles')) {
-            $record->syncRoles($payload['roles']);
-        }
-
-        $updates = array_intersect_key($payload, array_flip([
-            'is_active', 'access_expires_at', 'must_change_password',
-        ]));
-
-        if ($updates !== []) {
-            $record->update($updates);
-        }
     }
 }

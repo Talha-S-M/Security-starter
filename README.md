@@ -566,6 +566,81 @@ php artisan security:doctor
 
 ## Auditing drivers
 
-Auth events are always stored in `security_events` regardless of driver.
+Package events are split across two stores with **no duplication**:
 
-For Owen-It, add `Auditable` to sensitive models. For Activity Log, key events are logged automatically via the package listeners.
+| Destination | What is stored |
+|-------------|----------------|
+| **Security Events** (`security_events`) | Login, logout, failed login, MFA, password changes/resets, registration submitted, authorization denials, account lockouts |
+| **Audit Trail** (Spatie `activity_log` or Owen-It `audits`) | User create/update, role permission changes, RBAC attach/detach, access request workflow, manual reviews, plus your app's own audit entries |
+
+`SECURITY_AUDIT_DRIVER` selects where the audit trail is read from (`activitylog`, `auditing`, or `none`). Auth events always go to `security_events` only; RBAC and provisioning events go to the audit driver only.
+
+**Security Events** (`/security/admin/partials/security-events`) — authentication and access-control activity.
+
+**Audit Trail** (`/security/admin/partials/audit-trail`) — provisioning, RBAC, and application audit records from Spatie Activity Log or Owen-It.
+
+> With `SECURITY_AUDIT_DRIVER=none`, RBAC/provisioning events are not persisted. Use `activitylog` or `auditing` if you need an audit trail.
+
+### Model change auditing (Owen-It)
+
+When `SECURITY_AUDIT_DRIVER=auditing`, add `Auditable` to sensitive models (for example `User`, `Order`). Attribute changes are recorded automatically:
+
+```php
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Pitbphp\Security\Traits\HasPitbAuditing;
+
+class Order extends Model implements Auditable
+{
+    use AuditableTrait, HasPitbAuditing;
+}
+```
+
+```php
+// Persisting a change is enough — Owen-It writes the audit row
+$order->update([
+    'status' => 'delivered',
+    'delivered_at' => now(),
+]);
+```
+
+View results under **Audit trail** in the admin partials.
+
+### Custom business events (Spatie Activity Log)
+
+When `SECURITY_AUDIT_DRIVER=activitylog`, log domain actions (order delivered, payment captured, etc.) with Spatie's `activity()` helper. Use a log name per domain (`orders`, `payments`, …) and dot-separated event descriptions:
+
+```php
+use App\Models\Order;
+
+public function markDelivered(Order $order): void
+{
+    $order->update([
+        'status' => 'delivered',
+        'delivered_at' => now(),
+    ]);
+
+    activity('orders')
+        ->performedOn($order)
+        ->causedBy(auth()->user())
+        ->withProperties([
+            'order_id' => $order->id,
+            'tracking_number' => $order->tracking_number,
+        ])
+        ->log('order.delivered');
+}
+```
+
+Optional: add Spatie's `LogsActivity` trait to a model if you want automatic logging on create/update/delete in addition to manual entries.
+
+### Choosing an approach
+
+| Goal | Where it is stored |
+|------|-------------------|
+| Login, logout, failed login, MFA, passwords | `security_events` → Security Events UI |
+| User/role changes, access requests, RBAC | Audit driver → Audit Trail UI |
+| “Who changed this model field?” | Owen-It `Auditable` on the model (Audit Trail) |
+| “Something happened” (delivered, approved, exported) | Spatie `activity()` with `performedOn` / `causedBy` (Audit Trail) |
+| Periodic compliance reviews | `security_reviews` → Reviews UI |
+
+Do not log the same package event twice — auth stays in Security Events; provisioning and RBAC stay in the audit trail.

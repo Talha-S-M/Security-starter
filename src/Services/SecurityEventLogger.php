@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 use Pitbphp\Security\Models\SecurityEvent;
+use Pitbphp\Security\Support\SecurityActorPresenter;
 use Pitbphp\Security\Support\SensitiveDataRedactor;
 
 class SecurityEventLogger
@@ -16,38 +17,22 @@ class SecurityEventLogger
 
     public function auth(string $event, bool $success, ?Authenticatable $user = null, array $extra = []): void
     {
-        $this->log('auth', $event, $success, $user, $extra);
+        $this->log('auth', $event, $success, $user, $user, $extra);
     }
 
     public function authorization(string $event, bool $success, ?Authenticatable $user = null, array $extra = []): void
     {
-        $this->log('authorization', $event, $success, $user, $extra);
+        $this->log('authorization', $event, $success, $user, $user, $extra);
     }
 
-    public function rbac(string $event, bool $success, ?Authenticatable $subject = null, ?Authenticatable $causer = null, array $extra = []): void
-    {
-        $request = request();
-
-        $properties = array_merge([
-            'success' => $success,
-            'ip' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'origination' => $request?->ip(),
-        ], $this->sanitize($extra));
-
-        SecurityEvent::query()->create([
-            'user_id' => $causer?->getAuthIdentifier() ?? $subject?->getAuthIdentifier(),
-            'event_type' => $event,
-            'success' => $success,
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'properties' => $properties,
-        ]);
-
-        $auditSubject = $subject instanceof Model ? $subject : null;
-        $auditCauser = $causer instanceof Model ? $causer : null;
-
-        $this->auditLogger->log($event, $properties, $auditSubject, $auditCauser);
+    public function rbac(
+        string $event,
+        bool $success,
+        Authenticatable|Model|null $subject = null,
+        ?Authenticatable $causer = null,
+        array $extra = []
+    ): void {
+        $this->writeEvent($event, $success, $subject, $causer, $extra, 'rbac');
     }
 
     public function recordReview(
@@ -64,11 +49,16 @@ class SecurityEventLogger
             'performed_at' => now(),
         ]);
 
-        $this->auditLogger->log('security.review.'.$type, [
-            'review_id' => $review->id,
-            'notes' => $notes,
-            'metadata' => $metadata,
-        ], null, $performer);
+        $properties = array_merge(
+            $this->enrichActors(null, $performer),
+            [
+                'review_id' => $review->id,
+                'notes' => $notes,
+                'metadata' => $metadata,
+            ]
+        );
+
+        $this->auditLogger->log('security.review.'.$type, $properties, null, $performer instanceof Model ? $performer : null);
 
         return $review;
     }
@@ -80,30 +70,90 @@ class SecurityEventLogger
             ->delete();
     }
 
-    protected function log(string $category, string $event, bool $success, ?Authenticatable $user, array $extra): void
-    {
+    protected function log(
+        string $category,
+        string $event,
+        bool $success,
+        ?Authenticatable $subject,
+        ?Authenticatable $causer,
+        array $extra
+    ): void {
+        $this->writeEvent($event, $success, $subject, $causer, $extra, $category);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    protected function writeEvent(
+        string $event,
+        bool $success,
+        Authenticatable|Model|null $subject,
+        ?Authenticatable $causer,
+        array $context,
+        string $category,
+    ): void {
+        $properties = $this->buildProperties($category, $success, $subject, $causer, $context);
+
+        if ($category === 'rbac') {
+            $this->auditLogger->log(
+                $event,
+                $properties,
+                $subject instanceof Model ? $subject : null,
+                $causer instanceof Model ? $causer : null,
+            );
+
+            return;
+        }
+
         $request = request();
 
-        $properties = array_merge([
-            'category' => $category,
-            'success' => $success,
-            'ip' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'origination' => $request?->ip(),
-        ], $this->sanitize($extra));
-
         SecurityEvent::query()->create([
-            'user_id' => $user?->getAuthIdentifier(),
+            'user_id' => $causer?->getAuthIdentifier() ?? ($subject instanceof Authenticatable ? $subject->getAuthIdentifier() : null),
             'event_type' => $event,
             'success' => $success,
             'ip_address' => $request?->ip(),
             'user_agent' => $request?->userAgent(),
             'properties' => $properties,
         ]);
+    }
 
-        $subject = $user instanceof Model ? $user : null;
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildProperties(
+        string $category,
+        bool $success,
+        Authenticatable|Model|null $subject,
+        ?Authenticatable $causer,
+        array $context,
+    ): array {
+        $request = request();
 
-        $this->auditLogger->log($event, $properties, $subject, $subject);
+        return array_merge([
+            'category' => $category,
+            'success' => $success,
+            'ip' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'origination' => $request?->ip(),
+        ], $this->enrichActors($subject, $causer), $this->sanitize($context));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function enrichActors(Authenticatable|Model|null $subject, ?Authenticatable $causer): array
+    {
+        $data = [];
+
+        if ($causerSnapshot = SecurityActorPresenter::snapshot($causer)) {
+            $data['causer'] = $causerSnapshot;
+        }
+
+        if ($subjectSnapshot = SecurityActorPresenter::snapshot($subject)) {
+            $data['subject'] = $subjectSnapshot;
+        }
+
+        return $data;
     }
 
     protected function sanitize(array $data): array

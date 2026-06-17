@@ -1,4 +1,4 @@
-@include('security::admin.partials.page-open', ['title' => 'Security events', 'subtitle' => 'Authentication, authorization, and security activity'])
+@include('security::admin.partials.page-open', ['title' => 'Security events', 'subtitle' => 'Authentication, MFA, password changes, and authorization failures'])
 
 <form class="toolbar filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">
     <input type="text" name="event_type" placeholder="Event type" value="{{ $filters['event_type'] ?? '' }}">
@@ -21,7 +21,8 @@
                     <th>ID</th>
                     <th>Time</th>
                     <th>Event</th>
-                    <th>User</th>
+                    <th>Actor</th>
+                    <th>Subject</th>
                     <th>IP</th>
                     <th>Result</th>
                 </tr>
@@ -36,7 +37,8 @@
                                 {{ $event->event_type }}
                             </a>
                         </td>
-                        <td>{{ $event->user_id ?? '—' }}</td>
+                        <td>{{ \Pitbphp\Security\Support\SecurityActorPresenter::causerForEvent($event) }}</td>
+                        <td>{{ \Pitbphp\Security\Support\SecurityActorPresenter::subjectForEvent($event) }}</td>
                         <td>{{ $event->ip_address ?? '—' }}</td>
                         <td>
                             <span class="badge {{ $event->success ? 'badge-success' : 'badge-danger' }}">
@@ -45,7 +47,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6"><div class="empty-state">No security events found.</div></td></tr>
+                    <tr><td colspan="7"><div class="empty-state">No security events found.</div></td></tr>
                 @endforelse
             </tbody>
         </table>
