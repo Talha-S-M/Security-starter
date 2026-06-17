@@ -7,6 +7,7 @@ namespace Pitbphp\Security\Commands;
 
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
 
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
@@ -74,6 +75,7 @@ class InstallSecurityCommand extends Command
         $this->publishVendorConfigs($driver);
         $this->publishAuditingMigrations($driver);
 
+        $this->ensureDefaultLaravelMigrations();
         $this->runPackageMigrations();
 
         $this->runApplicationMigrations();
@@ -272,6 +274,25 @@ class InstallSecurityCommand extends Command
         $this->call('migrate', [
             '--force' => $this->option('force'),
         ]);
+    }
+
+    protected function ensureDefaultLaravelMigrations(): void
+    {
+        $userTable = (string) config('security.user.table', 'users');
+
+        if (Schema::hasTable($userTable)) {
+            return;
+        }
+
+        $this->warn("User table [{$userTable}] not found. Running default Laravel migrations first...");
+
+        $this->call('migrate', [
+            '--force' => $this->option('force'),
+        ]);
+
+        if (! Schema::hasTable($userTable)) {
+            $this->warn("User table [{$userTable}] is still missing after migrate. Check your SECURITY_USER_TABLE setting and app migrations.");
+        }
     }
 
 

@@ -26,6 +26,8 @@ This will (once):
 
 Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
 
+If the app has not run baseline Laravel migrations yet (for example `users` table is missing), install automatically runs `php artisan migrate` first as a fallback before package migrations.
+
 If you skip seeding, update `config/security.php` (`security.permissions.permissions` and `security.permissions.roles`) and run:
 
 ```bash
