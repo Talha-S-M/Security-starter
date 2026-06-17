@@ -1,24 +1,20 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', ['title' => 'Security events', 'subtitle' => 'Authentication, authorization, and security activity'])
 
-    @if (session('status'))
-        <div class="status">{{ session('status') }}</div>
-    @endif
+<form class="toolbar filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">
+    <input type="text" name="event_type" placeholder="Event type" value="{{ $filters['event_type'] ?? '' }}">
+    <input type="number" name="user_id" placeholder="User ID" value="{{ $filters['user_id'] ?? '' }}">
+    <select name="success">
+        <option value="">All results</option>
+        <option value="1" @selected(($filters['success'] ?? '') === '1')>Success</option>
+        <option value="0" @selected(($filters['success'] ?? '') === '0')>Failed</option>
+    </select>
+    <input type="date" name="from" value="{{ $filters['from'] ?? '' }}">
+    <input type="date" name="to" value="{{ $filters['to'] ?? '' }}">
+    <button class="btn btn-primary" type="submit">Apply filters</button>
+</form>
 
-    <form class="filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">
-        <input type="text" name="event_type" placeholder="Event type" value="{{ $filters['event_type'] ?? '' }}">
-        <input type="number" name="user_id" placeholder="User ID" value="{{ $filters['user_id'] ?? '' }}">
-        <select name="success">
-            <option value="">All results</option>
-            <option value="1" @selected(($filters['success'] ?? '') === '1')>Success</option>
-            <option value="0" @selected(($filters['success'] ?? '') === '0')>Failed</option>
-        </select>
-        <input type="date" name="from" value="{{ $filters['from'] ?? '' }}">
-        <input type="date" name="to" value="{{ $filters['to'] ?? '' }}">
-        <button class="btn btn-primary" type="submit">Filter</button>
-    </form>
-
-    <div class="card">
+<div class="card">
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -36,7 +32,7 @@
                         <td>{{ $event->id }}</td>
                         <td>{{ $event->created_at }}</td>
                         <td>
-                            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events.show'), $event) }}">
+                            <a class="table-link" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events.show'), $event) }}">
                                 {{ $event->event_type }}
                             </a>
                         </td>
@@ -49,10 +45,12 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="muted">No security events found.</td></tr>
+                    <tr><td colspan="6"><div class="empty-state">No security events found.</div></td></tr>
                 @endforelse
             </tbody>
         </table>
-        <div>{{ $events->links() }}</div>
     </div>
+    <div class="pagination">{{ $events->links() }}</div>
 </div>
+
+@include('security::admin.partials.page-close')

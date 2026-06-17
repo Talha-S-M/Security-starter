@@ -1,26 +1,17 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', [
+    'title' => 'Create user',
+    'subtitle' => ($requiresApproval ?? false) ? 'This request will be sent for super-admin approval.' : 'Provision a new account with roles and a temporary password.',
+])
 
-    @if ($errors->any())
-        <ul class="errors">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
+<div class="card form-card">
+    <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.store')) }}">
+        @csrf
 
-    <div class="card">
-        <h2>Create user</h2>
-
-        @if ($requiresApproval ?? false)
-            <p class="muted">Your request will be sent to a super-admin for approval.</p>
-        @endif
-
-        <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.store')) }}">
-            @csrf
+        <section class="form-section">
+            <h2 class="form-section__title">Account details</h2>
 
             <div class="field">
-                <label for="name">Name</label>
+                <label for="name">Full name</label>
                 <input id="name" name="name" type="text" value="{{ old('name') }}" required>
             </div>
 
@@ -32,26 +23,37 @@
             @include('security::auth.partials.password-fields', [
                 'passwordLabel' => 'Temporary password',
             ])
+        </section>
 
-            <div class="field">
-                <label>Roles</label>
+        <section class="form-section">
+            <h2 class="form-section__title">Roles</h2>
+            <p class="form-section__desc">Select the roles this user should have after provisioning.</p>
+
+            <div class="choice-grid">
                 @foreach ($roles as $role)
-                    <label class="checkbox">
+                    <label class="choice-item">
                         <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(collect(old('roles', [config('security.permissions.default_user_role', 'user')]))->contains($role->name))>
-                        {{ $role->name }}
+                        <span>{{ $role->name }}</span>
                     </label>
                 @endforeach
             </div>
+        </section>
 
-            @if ($requiresApproval ?? false)
+        @if ($requiresApproval ?? false)
+            <section class="form-section">
+                <h2 class="form-section__title">Approval</h2>
                 <div class="field">
                     <label for="justification">Justification</label>
                     <textarea id="justification" name="justification" rows="3" required>{{ old('justification') }}</textarea>
                 </div>
-            @endif
+            </section>
+        @endif
 
+        <div class="form-actions">
             <button class="btn btn-primary" type="submit">Create user</button>
             <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}">Cancel</a>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+
+@include('security::admin.partials.page-close')

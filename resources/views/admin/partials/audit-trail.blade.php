@@ -1,17 +1,18 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', [
+    'title' => 'Audit trail',
+    'subtitle' => 'Source: '.$driverLabel,
+])
 
-    <p class="muted">Source: <strong>{{ $driverLabel }}</strong></p>
+<form class="toolbar filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.audit-trail')) }}">
+    <input type="text" name="search" placeholder="Search audit records" value="{{ $filters['search'] ?? '' }}">
+    <button class="btn btn-primary" type="submit">Search</button>
+</form>
 
-    <form class="filters" method="GET" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.audit-trail')) }}">
-        <input type="text" name="search" placeholder="Search" value="{{ $filters['search'] ?? '' }}">
-        <button class="btn btn-primary" type="submit">Filter</button>
-    </form>
-
-    <div class="card">
-        @if (! $logs)
-            <p class="muted">Audit trail not available for the current auditing driver.</p>
-        @else
+<div class="card">
+    @if (! $logs)
+        <div class="empty-state">Audit trail is not available for the current auditing driver.</div>
+    @else
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -40,11 +41,13 @@
                             @endif
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="muted">No audit records found.</td></tr>
+                        <tr><td colspan="5"><div class="empty-state">No audit records found.</div></td></tr>
                     @endforelse
                 </tbody>
             </table>
-            <div>{{ $logs->links() }}</div>
-        @endif
-    </div>
+        </div>
+        <div class="pagination">{{ $logs->links() }}</div>
+    @endif
 </div>
+
+@include('security::admin.partials.page-close')

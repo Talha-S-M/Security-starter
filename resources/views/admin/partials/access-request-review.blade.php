@@ -1,50 +1,59 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', [
+    'title' => 'Access request #'.$accessRequest->id,
+    'subtitle' => str_replace('_', ' ', $accessRequest->type),
+])
 
-    @if ($errors->any())
-        <ul class="errors">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
-
-    <div class="card">
-        <h2>Access request #{{ $accessRequest->id }}</h2>
-
-        <p><strong>Status:</strong> {{ $accessRequest->status }}</p>
-        <p><strong>Type:</strong> {{ str_replace('_', ' ', $accessRequest->type) }}</p>
-        <p><strong>Target:</strong> {{ $accessRequest->target_type }} #{{ $accessRequest->target_id }}</p>
-        <p><strong>Requester ID:</strong> {{ $accessRequest->requester_id }}</p>
-
+<div class="card panel">
+    <h2 class="panel__title">Request details</h2>
+    <dl class="detail-grid">
+        <div class="detail-row"><dt>Status</dt><dd><span class="badge badge-neutral">{{ $accessRequest->status }}</span></dd></div>
+        <div class="detail-row"><dt>Type</dt><dd>{{ str_replace('_', ' ', $accessRequest->type) }}</dd></div>
+        <div class="detail-row"><dt>Target</dt><dd>{{ $accessRequest->target_type }} #{{ $accessRequest->target_id }}</dd></div>
+        <div class="detail-row"><dt>Requester ID</dt><dd>{{ $accessRequest->requester_id }}</dd></div>
         @if ($accessRequest->justification)
-            <p><strong>Justification:</strong> {{ $accessRequest->justification }}</p>
+            <div class="detail-row"><dt>Justification</dt><dd>{{ $accessRequest->justification }}</dd></div>
         @endif
-
-        <pre class="payload">{{ json_encode($accessRequest->payload, JSON_PRETTY_PRINT) }}</pre>
-
         @if ($accessRequest->review_notes)
-            <p><strong>Review notes:</strong> {{ $accessRequest->review_notes }}</p>
+            <div class="detail-row"><dt>Review notes</dt><dd>{{ $accessRequest->review_notes }}</dd></div>
         @endif
+    </dl>
+</div>
 
-        @if ($canApprove)
-            <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests.approve'), $accessRequest) }}" style="margin-top: 1rem;">
+<div class="card panel">
+    <h2 class="panel__title">Payload</h2>
+    <pre class="payload">{{ json_encode($accessRequest->payload, JSON_PRETTY_PRINT) }}</pre>
+</div>
+
+@if ($canApprove)
+    <div class="card form-card" style="margin-top:1rem;">
+        <section class="form-section">
+            <h2 class="form-section__title">Approve request</h2>
+            <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests.approve'), $accessRequest) }}">
                 @csrf
-                <label for="approve_notes">Approval notes (optional)</label>
-                <textarea id="approve_notes" name="review_notes" rows="3"></textarea>
+                <div class="field">
+                    <label for="approve_notes">Approval notes (optional)</label>
+                    <textarea id="approve_notes" name="review_notes" rows="3"></textarea>
+                </div>
                 <button class="btn btn-primary" type="submit">Approve</button>
             </form>
+        </section>
 
-            <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests.reject'), $accessRequest) }}" style="margin-top: 1rem;">
+        <section class="form-section">
+            <h2 class="form-section__title">Reject request</h2>
+            <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests.reject'), $accessRequest) }}">
                 @csrf
-                <label for="reject_notes">Rejection reason (optional)</label>
-                <textarea id="reject_notes" name="review_notes" rows="3"></textarea>
-                <button class="btn btn-secondary" type="submit">Reject</button>
+                <div class="field">
+                    <label for="reject_notes">Rejection reason (optional)</label>
+                    <textarea id="reject_notes" name="review_notes" rows="3"></textarea>
+                </div>
+                <button class="btn btn-danger" type="submit">Reject</button>
             </form>
-        @endif
-
-        <div style="margin-top: .75rem;">
-            <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Back</a>
-        </div>
+        </section>
     </div>
+@endif
+
+<div class="toolbar" style="margin-top:1rem;">
+    <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Back to requests</a>
 </div>
+
+@include('security::admin.partials.page-close')

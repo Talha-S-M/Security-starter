@@ -1,7 +1,7 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', ['title' => 'Manual reviews', 'subtitle' => 'Recorded access and log review activity'])
 
-    <div class="card">
+<div class="card">
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -22,10 +22,12 @@
                         <td>{{ \Illuminate\Support\Str::limit($review->notes, 80) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="muted">No reviews recorded yet.</td></tr>
+                    <tr><td colspan="5"><div class="empty-state">No reviews recorded yet.</div></td></tr>
                 @endforelse
             </tbody>
         </table>
-        <div>{{ $reviews->links() }}</div>
     </div>
+    <div class="pagination">{{ $reviews->links() }}</div>
 </div>
+
+@include('security::admin.partials.page-close')

@@ -7,47 +7,73 @@
     @include('security::admin.partials.styles')
 </head>
 <body class="pitb-security pitb-security-page">
-    @include('security::partials.header')
+    <div class="admin-app">
+        @include('security::admin.partials.sidebar-nav')
 
-    <main class="auth-shell">
-        <div class="card auth-card">
-            <h1>PITB Security Dashboard</h1>
-            <p class="muted">Use quick links below to test and verify create/edit/update flows.</p>
+        <main class="admin-main">
+            <header class="page-header">
+                <h1>Security dashboard</h1>
+                <p class="page-subtitle">Quick access to users, roles, permissions, logs, and reviews.</p>
+            </header>
 
-            <div class="pitb-admin-grid" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:1rem;">
-                @auth
-                    @can('users.view')
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}">Users</a>
-                    @endcan
-                    @can('users.create')
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.create')) }}">Create User</a>
-                    @endcan
-                    @can('roles.view')
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.roles')) }}">Roles</a>
-                    @endcan
-                    @can('permissions.view')
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.permissions')) }}">Permissions</a>
-                    @endcan
-                    @can('audit-logs.view')
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">Security Events</a>
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.audit-trail')) }}">Audit Trail</a>
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.reviews')) }}">Reviews</a>
-                    @endcan
-                    @canany(['access-requests.view', 'access-requests.approve'])
-                        <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Access Requests</a>
-                    @endcanany
-                    <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.summary')) }}">Summary</a>
-                @endauth
+            <div class="page-body">
+                <div class="stat-grid">
+                    @auth
+                        @can('users.view')
+                            <a class="stat-card" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}" style="text-decoration:none;color:inherit;">
+                                <div class="stat-card__label">Users</div>
+                                <div class="stat-card__value" style="font-size:1rem;">Manage accounts</div>
+                            </a>
+                        @endcan
+                        @can('roles.view')
+                            <a class="stat-card" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.roles')) }}" style="text-decoration:none;color:inherit;">
+                                <div class="stat-card__label">Roles</div>
+                                <div class="stat-card__value" style="font-size:1rem;">Edit role access</div>
+                            </a>
+                        @endcan
+                        @can('audit-logs.view')
+                            <a class="stat-card" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}" style="text-decoration:none;color:inherit;">
+                                <div class="stat-card__label">Security events</div>
+                                <div class="stat-card__value" style="font-size:1rem;">View activity</div>
+                            </a>
+                        @endcan
+                    @else
+                        <div class="stat-card">
+                            <div class="stat-card__label">Welcome</div>
+                            <div class="stat-card__value" style="font-size:1rem;">Sign in to continue</div>
+                        </div>
+                    @endauth
+                </div>
 
-                @guest
-                    <a class="btn btn-secondary" href="{{ route('login') }}">Login</a>
-                    @if (config('security.auth.register', false))
-                        <a class="btn btn-secondary" href="{{ route('register') }}">Request Account</a>
-                    @endif
-                    <a class="btn btn-secondary" href="{{ route('password.request') }}">Forgot Password</a>
-                @endguest
+                <div class="card">
+                    <h2 class="panel__title">Quick actions</h2>
+                    <div class="toolbar">
+                        @auth
+                            @can('users.create')
+                                <a class="btn btn-primary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.create')) }}">Create user</a>
+                            @endcan
+                            @can('permissions.view')
+                                <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.permissions')) }}">Permissions</a>
+                            @endcan
+                            @can('audit-logs.view')
+                                <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.audit-trail')) }}">Audit trail</a>
+                                <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.reviews')) }}">Reviews</a>
+                            @endcan
+                            @canany(['access-requests.view', 'access-requests.approve'])
+                                <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Access requests</a>
+                            @endcanany
+                            <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.summary')) }}">Summary</a>
+                        @else
+                            <a class="btn btn-primary" href="{{ route('login') }}">Login</a>
+                            @if (config('security.auth.register', false))
+                                <a class="btn btn-secondary" href="{{ route('register') }}">Request account</a>
+                            @endif
+                            <a class="btn btn-secondary" href="{{ route('password.request') }}">Forgot password</a>
+                        @endauth
+                    </div>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 </body>
 </html>

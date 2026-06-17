@@ -1,7 +1,7 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', ['title' => 'Permissions', 'subtitle' => 'All permissions available in the RBAC system'])
 
-    <div class="card">
+<div class="card">
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -13,12 +13,14 @@
                 @forelse ($permissions as $permission)
                     <tr>
                         <td>{{ $permission->name }}</td>
-                        <td>{{ $permission->guard_name }}</td>
+                        <td><span class="badge badge-neutral">{{ $permission->guard_name }}</span></td>
                     </tr>
                 @empty
-                    <tr><td colspan="2" class="muted">No permissions found.</td></tr>
+                    <tr><td colspan="2"><div class="empty-state">No permissions found.</div></td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
+
+@include('security::admin.partials.page-close')

@@ -1,7 +1,7 @@
-<div class="pitb-security">
-    @include('security::admin.partials.styles')
+@include('security::admin.partials.page-open', ['title' => 'Roles', 'subtitle' => 'Review role definitions and manage permission assignments'])
 
-    <div class="card">
+<div class="card">
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -14,13 +14,13 @@
                 @foreach ($roles as $role)
                     <tr>
                         <td><strong>{{ $role->name }}</strong></td>
-                        <td>{{ $role->permissions->pluck('name')->join(', ') }}</td>
+                        <td class="muted">{{ $role->permissions->pluck('name')->join(', ') ?: '—' }}</td>
                         <td>
                             @can('roles.manage')
                                 @if ($role->name !== 'super-admin')
-                                    <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.roles.edit'), $role) }}">Edit</a>
+                                    <a class="table-link" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.roles.edit'), $role) }}">Edit</a>
                                 @else
-                                    <span class="muted">Locked</span>
+                                    <span class="badge badge-neutral">Locked</span>
                                 @endif
                             @endcan
                         </td>
@@ -30,3 +30,5 @@
         </table>
     </div>
 </div>
+
+@include('security::admin.partials.page-close')
