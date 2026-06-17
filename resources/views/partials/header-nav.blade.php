@@ -9,8 +9,14 @@
     @endguest
 
     @auth
+        @can('audit-logs.view')
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.summary')) }}">Summary</a>
+        @endcan
         @can('users.view')
             <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}">Users</a>
+        @endcan
+        @can('users.create')
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users.create')) }}">Create user</a>
         @endcan
         @can('roles.view')
             <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.roles')) }}">Roles</a>
@@ -19,7 +25,12 @@
             <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.permissions')) }}">Permissions</a>
         @endcan
         @can('audit-logs.view')
-            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">Activity log</a>
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.security-events')) }}">Security events</a>
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.audit-trail')) }}">Audit trail</a>
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.reviews')) }}">Reviews</a>
+        @endcan
+        @canany(['access-requests.view', 'access-requests.approve'])
+            <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.access-requests')) }}">Access requests</a>
         @endcan
 
         <form method="POST" action="{{ route('logout') }}" style="display:inline-block; margin: 0;">

@@ -19,7 +19,6 @@
 
     @include('security::auth.partials.password-strength', [
         'passwordId' => $passwordId,
-        'confirmationId' => $confirmationId,
     ])
 </div>
 

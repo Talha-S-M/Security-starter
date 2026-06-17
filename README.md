@@ -63,7 +63,7 @@ Views are copied to `resources/views/vendor/security/` where you can edit them f
 php artisan security:integrate-welcome
 ```
 
-This injects `@include('security::partials.header')` into `resources/views/welcome.blade.php` (idempotent: it will not duplicate). If your welcome page has no `<body>` tag, run with `--force`.
+This overwrites `resources/views/welcome.blade.php` with a PITB Security dashboard page that includes permission-aware navigation links for users, roles, permissions, logs, reviews, and access requests.
 
 ### Publish migrations manually
 

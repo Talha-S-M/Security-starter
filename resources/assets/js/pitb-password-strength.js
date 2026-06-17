@@ -110,7 +110,7 @@
         return 'weak';
     }
 
-    function analyze(password, confirmation, policyInput) {
+    function analyze(password, policyInput) {
         const policy = parsePolicy(policyInput);
         const checks = evaluateRules(password, policy);
         const definitions = buildRuleDefinitions(policy);
@@ -123,26 +123,11 @@
             };
         });
 
-        if (confirmation !== null && confirmation !== undefined) {
-            rules.push({
-                key: 'confirmed',
-                label: 'Passwords match',
-                passed: password !== '' && password === confirmation,
-            });
-        }
-
-        const policyValid = rules
-            .filter(function (rule) { return rule.key !== 'confirmed'; })
-            .every(function (rule) { return rule.passed; });
-
-        const confirmed = confirmation === null || confirmation === undefined || rules.some(function (rule) {
-            return rule.key === 'confirmed' && rule.passed;
-        });
-
+        const valid = rules.every(function (rule) { return rule.passed; });
         const value = score(password, policy, checks);
 
         return {
-            valid: policyValid && confirmed,
+            valid: valid,
             strength: strengthLabel(value),
             score: value,
             rules: rules,
@@ -156,10 +141,6 @@
         if (!passwordInput) {
             return;
         }
-
-        const confirmationInput = container.dataset.confirmationId
-            ? document.getElementById(container.dataset.confirmationId)
-            : null;
 
         const fill = document.getElementById(container.dataset.meterId);
         const label = container.querySelector('[data-strength-label]');
@@ -177,11 +158,7 @@
         }
 
         function update() {
-            const result = analyze(
-                passwordInput.value,
-                confirmationInput ? confirmationInput.value : null,
-                policy
-            );
+            const result = analyze(passwordInput.value, policy);
 
             fill.style.width = result.score + '%';
             fill.dataset.strength = result.strength;
@@ -216,10 +193,6 @@
         passwordInput.addEventListener('blur', hide);
 
         passwordInput.addEventListener('input', update);
-
-        if (confirmationInput) {
-            confirmationInput.addEventListener('input', update);
-        }
 
         if (submit) {
             submit.disabled = true;

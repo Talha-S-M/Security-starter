@@ -1,15 +1,12 @@
 @php
     $passwordId = $passwordId ?? 'password';
-    $confirmationId = $confirmationId ?? 'password_confirmation';
     $meterId = $meterId ?? 'pitb-password-strength-'.uniqid();
-    $requireConfirmation = $requireConfirmation ?? true;
 @endphp
 
 <div
     class="pitb-password-strength"
     data-pitb-password-strength
     data-password-id="{{ $passwordId }}"
-    data-confirmation-id="{{ $requireConfirmation ? $confirmationId : '' }}"
     data-meter-id="{{ $meterId }}"
     data-policy='@json(\Pitbphp\Security\Support\PasswordStrength::policy())'
     hidden
