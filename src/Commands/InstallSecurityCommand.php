@@ -30,6 +30,7 @@ class InstallSecurityCommand extends Command
                             {--skip-composer : Do not run composer require}
 
                             {--skip-seed : Do not seed default roles and permissions}
+                            {--seed : Run default roles and permissions seeder without confirmation}
 
                             {--force : Overwrite published files}';
 
@@ -312,10 +313,14 @@ class InstallSecurityCommand extends Command
             return;
         }
 
-        $default = (bool) config('security.permissions.seed_on_install', true);
-        $shouldSeed = $this->option('no-interaction')
-            ? $default
-            : $this->confirm('Run default roles and permissions seeder now?', $default);
+        if ($this->option('seed')) {
+            $shouldSeed = true;
+        } else {
+            $default = (bool) config('security.permissions.seed_on_install', true);
+            $shouldSeed = $this->option('no-interaction')
+                ? $default
+                : $this->confirm('Run default roles and permissions seeder now?', $default);
+        }
 
         if (! $shouldSeed) {
             $this->warn('Skipped default RBAC seeding.');

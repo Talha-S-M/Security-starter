@@ -10,6 +10,7 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\Script\ScriptEvents;
+use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\InstallMarker;
 use Symfony\Component\Process\Process;
 
@@ -107,14 +108,29 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
+        $options = $this->promptInstallOptions();
+        $command = [
+            PHP_BINARY,
+            $artisan,
+            'security:install',
+            '--driver='.$options['driver'],
+            '--mode='.$options['mode'],
+        ];
+
+        if ($options['skip_composer']) {
+            $command[] = '--skip-composer';
+        }
+
+        if ($options['should_seed']) {
+            $command[] = '--seed';
+        } else {
+            $command[] = '--skip-seed';
+        }
+
         $this->io->write('<info>Running php artisan security:install...</info>');
 
-        $process = new Process([PHP_BINARY, $artisan, 'security:install'], $basePath);
+        $process = new Process($command, $basePath);
         $process->setTimeout(null);
-
-        if (Process::isTtySupported()) {
-            $process->setTty(true);
-        }
 
         $process->run(function ($type, $buffer): void {
             $this->io->write($buffer, false);
@@ -125,6 +141,48 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
                 '<error>security:install did not complete successfully. Run <comment>php artisan security:install</comment> manually.</error>'
             );
         }
+    }
+
+    /**
+     * @return array{driver: string, mode: string, skip_composer: bool, should_seed: bool}
+     */
+    protected function promptInstallOptions(): array
+    {
+        $this->io->write('<info>Configure PITB Security setup:</info>');
+
+        $driver = $this->io->select(
+            'Which auditing library would you like to use?',
+            ['activitylog', 'auditing', 'none'],
+            0
+        );
+
+        $mode = $this->io->select(
+            'Which runtime mode do you want to secure?',
+            ['web', 'api', 'hybrid'],
+            0
+        );
+
+        $skipComposer = false;
+
+        if ($driver !== 'none' && ! AuditingPackageResolver::isPackageAvailable($driver)) {
+            $package = AuditingPackageResolver::driverPackage($driver);
+
+            if ($package && ! $this->io->askConfirmation("Install {$package} via Composer?", true)) {
+                $skipComposer = true;
+            }
+        }
+
+        $shouldSeed = $this->io->askConfirmation(
+            'Run default roles and permissions seeder now?',
+            true
+        );
+
+        return [
+            'driver' => (string) $driver,
+            'mode' => (string) $mode,
+            'skip_composer' => $skipComposer,
+            'should_seed' => $shouldSeed,
+        ];
     }
 
     protected function applicationBasePath(): string
