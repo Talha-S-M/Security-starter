@@ -60,7 +60,8 @@
     .pitb-security .auth-links a { color: #2563eb; text-decoration: none; }
     .pitb-security .auth-links a:hover { text-decoration: underline; }
 
-    .pitb-security .pitb-password-strength { margin: .5rem 0 1rem; }
+    .pitb-security .pitb-password-strength { margin: .5rem 0 0; }
+    .pitb-security .pitb-password-strength[hidden] { display: none !important; }
     .pitb-security .pitb-password-strength__bar { height: .35rem; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
     .pitb-security .pitb-password-strength__fill { height: 100%; width: 0; border-radius: inherit; transition: width .2s ease, background-color .2s ease; background: #ef4444; }
     .pitb-security .pitb-password-strength__fill[data-strength="fair"] { background: #f59e0b; }

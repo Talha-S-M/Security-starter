@@ -35,17 +35,12 @@
                     </div>
                 @endunless
 
-                <div class="field">
-                    <label for="password">New password</label>
-                    <input id="password" name="password" type="password" required autocomplete="new-password">
-                </div>
-
-                <div class="field">
-                    <label for="password_confirmation">Confirm new password</label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
-                </div>
-
-                @include('security::auth.partials.password-strength')
+                @include('security::auth.partials.password-fields', [
+                    'passwordLabel' => 'New password',
+                    'confirmationLabel' => 'Confirm new password',
+                    'passwordAutocomplete' => 'new-password',
+                    'confirmationAutocomplete' => 'new-password',
+                ])
 
                 <button class="btn btn-primary btn-block" type="submit">Save password</button>
             </form>

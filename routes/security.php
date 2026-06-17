@@ -12,6 +12,17 @@ Route::prefix(SecurityRoutes::path())
     ->middleware(['web'])
     ->group(function () {
         Route::get('/', [HomeController::class, 'index'])->name('home');
+
+        Route::get('assets/password-strength.js', function () {
+            $path = __DIR__.'/../resources/assets/js/pitb-password-strength.js';
+
+            abort_unless(is_file($path), 404);
+
+            return response()->file($path, [
+                'Content-Type' => 'application/javascript; charset=UTF-8',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        })->name('assets.password-strength');
     });
 
 Route::prefix(SecurityRoutes::path())

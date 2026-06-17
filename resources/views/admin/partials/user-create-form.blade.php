@@ -29,17 +29,9 @@
                 <input id="email" name="email" type="email" value="{{ old('email') }}" required>
             </div>
 
-            <div class="field">
-                <label for="password">Temporary password</label>
-                <input id="password" name="password" type="password" required>
-            </div>
-
-            <div class="field">
-                <label for="password_confirmation">Confirm password</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" required>
-            </div>
-
-            @include('security::auth.partials.password-strength')
+            @include('security::auth.partials.password-fields', [
+                'passwordLabel' => 'Temporary password',
+            ])
 
             <div class="field">
                 <label>Roles</label>

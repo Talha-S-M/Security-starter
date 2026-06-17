@@ -1,7 +1,3 @@
-/**
- * Client-side PITB password strength checker.
- * No server requests — policy is read once from data-policy on each widget.
- */
 (function (global) {
     const DEFAULT_POLICY = {
         min_length: 12,
@@ -172,6 +168,14 @@
         const form = passwordInput.closest('form');
         const submit = form ? form.querySelector('[type="submit"]') : null;
 
+        function show() {
+            container.hidden = false;
+        }
+
+        function hide() {
+            container.hidden = true;
+        }
+
         function update() {
             const result = analyze(
                 passwordInput.value,
@@ -203,6 +207,13 @@
 
             container.dispatchEvent(new CustomEvent('pitb-password-strength', { detail: result }));
         }
+
+        passwordInput.addEventListener('focus', function () {
+            show();
+            update();
+        });
+
+        passwordInput.addEventListener('blur', hide);
 
         passwordInput.addEventListener('input', update);
 

@@ -377,13 +377,21 @@ Password reuse history is enabled for authenticated users via `HasPitbSecurity` 
 
 Live password feedback runs entirely in the browser — no per-keystroke server requests. Policy values from `config/security.php` are embedded once in the page as JSON; validation on submit still uses the `PitbPassword` rule server-side.
 
-**Blade partial** (included on register, reset-password, password update, and admin user-create forms):
+**Blade partial** — use on any form with password + confirmation fields:
+
+```blade
+@include('security::auth.partials.password-fields')
+```
+
+Optional: `passwordLabel`, `confirmationLabel`, `passwordId`, `confirmationId`, `passwordAutocomplete`, `confirmationAutocomplete`.
+
+Already included on register, reset-password, password update, and admin user-create forms.
+
+**Lower-level partial** (meter only, if you render inputs yourself):
 
 ```blade
 @include('security::auth.partials.password-strength')
 ```
-
-Optional parameters: `passwordId`, `confirmationId`, `requireConfirmation` (default `true`).
 
 **Standalone JS** (e.g. custom SPA or Vite bundle):
 
@@ -416,7 +424,7 @@ php artisan vendor:publish --tag=security-assets
 # → public/vendor/pitb-security/js/pitb-password-strength.js
 ```
 
-`security:install` publishes this tag automatically.
+`security:install` publishes this tag automatically. Until then, the script is served from `/security/assets/password-strength.js`.
 
 ## Package routes (no conflicts)
 

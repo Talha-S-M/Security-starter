@@ -12,6 +12,7 @@
     data-confirmation-id="{{ $requireConfirmation ? $confirmationId : '' }}"
     data-meter-id="{{ $meterId }}"
     data-policy='@json(\Pitbphp\Security\Support\PasswordStrength::policy())'
+    hidden
 >
     <div class="pitb-password-strength__bar" aria-hidden="true">
         <div id="{{ $meterId }}" class="pitb-password-strength__fill" data-strength="weak"></div>
@@ -22,5 +23,11 @@
 </div>
 
 @once('pitb-security-password-strength-script')
-    <script src="{{ asset('vendor/pitb-security/js/pitb-password-strength.js') }}" defer></script>
+    @php
+        $publishedStrengthScript = public_path('vendor/pitb-security/js/pitb-password-strength.js');
+        $strengthScriptUrl = is_file($publishedStrengthScript)
+            ? asset('vendor/pitb-security/js/pitb-password-strength.js')
+            : route(\Pitbphp\Security\Support\SecurityRoutes::name('assets.password-strength'));
+    @endphp
+    <script src="{{ $strengthScriptUrl }}" defer></script>
 @endonce
