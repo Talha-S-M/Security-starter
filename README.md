@@ -22,9 +22,15 @@ This will (once):
 4. Publish config, views, migrations, and **dependency configs** (`captcha.php`, `permission.php`, `activitylog.php` or `audit.php`)
 5. Publish and run auditing package migrations (`activity_log` or `audits` table)
 6. Run package and permission migrations
-7. Seed default PITB roles and permissions
+7. Ask whether to seed default PITB roles and permissions
 
 Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
+
+If you skip seeding, update `config/security.php` (`security.permissions.permissions` and `security.permissions.roles`) and run:
+
+```bash
+php artisan security:seed-rbac
+```
 
 Re-publish dependency configs only (without re-running full install):
 

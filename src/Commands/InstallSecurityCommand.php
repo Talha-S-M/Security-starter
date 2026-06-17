@@ -279,17 +279,45 @@ class InstallSecurityCommand extends Command
     protected function seedRbacDefaults(): void
 
     {
-
-        if ($this->option('skip-seed') || ! config('security.permissions.seed_on_install', true)) {
-
+        if (! config('security.permissions.enabled', true)) {
+            $this->warn('RBAC seeding skipped: permissions are disabled in config/security.php.');
             return;
-
         }
 
+        if ($this->option('skip-seed')) {
+            $this->warn('Skipped default RBAC seeding (--skip-seed).');
+            $this->showDeferredSeedInstructions();
+            return;
+        }
 
+        $default = (bool) config('security.permissions.seed_on_install', true);
+        $shouldSeed = $this->option('no-interaction')
+            ? $default
+            : $this->confirm('Run default roles and permissions seeder now?', $default);
 
-        $this->call('security:seed-rbac');
+        if (! $shouldSeed) {
+            $this->warn('Skipped default RBAC seeding.');
+            $this->showDeferredSeedInstructions();
+            return;
+        }
 
+        $result = $this->call('security:seed-rbac');
+
+        if ($result !== self::SUCCESS) {
+            $this->warn('Default RBAC seeding did not complete successfully.');
+            $this->showDeferredSeedInstructions();
+        }
+
+    }
+
+    protected function showDeferredSeedInstructions(): void
+    {
+        $this->newLine();
+        $this->line('You can seed later after editing roles/permissions in config/security.php:');
+        $this->line('  - security.permissions.permissions');
+        $this->line('  - security.permissions.roles');
+        $this->line('Then run: php artisan security:seed-rbac');
+        $this->line('If config is cached, run first: php artisan optimize:clear');
     }
 
 

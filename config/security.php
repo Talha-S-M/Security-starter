@@ -329,9 +329,6 @@ return [
             'user' => [
                 'security.access',
             ],
-            'vendor' => [
-                'security.access',
-            ],
         ],
     ],
 
