@@ -35,7 +35,22 @@
         @if ($passwordAutocomplete) autocomplete="{{ $passwordAutocomplete }}" @endif
     >
     @if ($showGeneratePassword)
-        <p class="field-hint">A temporary password is prefilled. The user must change it on first login.</p>
+        <div
+            class="password-preview"
+            data-pitb-password-preview
+            data-password-id="{{ $passwordId }}"
+            role="button"
+            tabindex="0"
+            title="Click to copy password"
+            @if (! $passwordValue) hidden @endif
+        >
+            <div class="password-preview__header">
+                <span class="password-preview__label">Temporary password</span>
+                <span class="password-preview__copy-hint" data-pitb-password-copy-hint>Click to copy</span>
+            </div>
+            <code class="password-preview__value" data-pitb-password-preview-value>{{ $passwordValue }}</code>
+        </div>
+        <p class="field-hint">Share this password with the user securely. They must change it on first login.</p>
     @endif
 
     @include('security::auth.partials.password-strength', [
@@ -56,78 +71,13 @@
 </div>
 
 @if ($showGeneratePassword)
-    @once('pitb-security-generate-password-script')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                function generatePassword(policy) {
-                    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-                    const lower = 'abcdefghjkmnpqrstuvwxyz';
-                    const numbers = '23456789';
-                    const symbols = '!@#$%&*?';
-                    const length = Math.max(Number(policy.min_length || 12), 12);
-                    let required = '';
-                    let pool = '';
-
-                    if (policy.require_uppercase) {
-                        required += upper[Math.floor(Math.random() * upper.length)];
-                        pool += upper;
-                    }
-                    if (policy.require_lowercase) {
-                        required += lower[Math.floor(Math.random() * lower.length)];
-                        pool += lower;
-                    }
-                    if (policy.require_numbers) {
-                        required += numbers[Math.floor(Math.random() * numbers.length)];
-                        pool += numbers;
-                    }
-                    if (policy.require_symbols) {
-                        required += symbols[Math.floor(Math.random() * symbols.length)];
-                        pool += symbols;
-                    }
-
-                    if (!pool) {
-                        pool = upper + lower + numbers + symbols;
-                    }
-
-                    let password = required;
-                    while (password.length < length) {
-                        password += pool[Math.floor(Math.random() * pool.length)];
-                    }
-
-                    return password.split('').sort(function () { return Math.random() - 0.5; }).join('');
-                }
-
-                document.querySelectorAll('[data-pitb-generate-password]').forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        const policy = JSON.parse(button.dataset.policy || '{}');
-                        const passwordInput = document.getElementById(button.dataset.passwordId);
-                        const confirmationInput = document.getElementById(button.dataset.confirmationId);
-
-                        if (!passwordInput || !confirmationInput) {
-                            return;
-                        }
-
-                        const password = window.PitbPasswordStrength
-                            ? (function () {
-                                let candidate = generatePassword(policy);
-                                let attempts = 0;
-
-                                while (attempts < 5 && !window.PitbPasswordStrength.analyze(candidate, policy).valid) {
-                                    candidate = generatePassword(policy);
-                                    attempts++;
-                                }
-
-                                return candidate;
-                            })()
-                            : generatePassword(policy);
-
-                        passwordInput.value = password;
-                        confirmationInput.value = password;
-                        passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        passwordInput.focus();
-                    });
-                });
-            });
-        </script>
+    @once('pitb-security-temporary-password-script')
+        @php
+            $publishedTemporaryPasswordScript = public_path('vendor/pitb-security/js/pitb-temporary-password.js');
+            $temporaryPasswordScriptUrl = is_file($publishedTemporaryPasswordScript)
+                ? asset('vendor/pitb-security/js/pitb-temporary-password.js')
+                : route(\Pitbphp\Security\Support\SecurityRoutes::name('assets.temporary-password'));
+        @endphp
+        <script src="{{ $temporaryPasswordScriptUrl }}" defer></script>
     @endonce
 @endif

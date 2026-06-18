@@ -144,6 +144,55 @@
     .pitb-security .field-hint { margin: .35rem 0 0; font-size: .8125rem; color: var(--pitb-muted); font-weight: 400; }
     .pitb-security .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .35rem; }
     .pitb-security .field-label-row label { margin: 0; }
+    .pitb-security .password-preview {
+        margin: .75rem 0 0;
+        padding: .75rem .9rem;
+        border: 1px dashed #cbd5e1;
+        border-radius: .6rem;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    .pitb-security .password-preview:hover,
+    .pitb-security .password-preview:focus {
+        outline: none;
+        border-color: #94a3b8;
+        background: #f1f5f9;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+    }
+    .pitb-security .password-preview.is-copied {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    .pitb-security .password-preview__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .35rem;
+    }
+    .pitb-security .password-preview__label {
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+        color: var(--pitb-muted);
+    }
+    .pitb-security .password-preview__copy-hint {
+        font-size: .75rem;
+        color: #2563eb;
+        font-weight: 600;
+    }
+    .pitb-security .password-preview.is-copied .password-preview__copy-hint { color: #16a34a; }
+    .pitb-security .password-preview__value {
+        display: block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: .95rem;
+        line-height: 1.5;
+        color: #0f172a;
+        word-break: break-all;
+        user-select: all;
+    }
     .pitb-security .audit-detail { max-width: 22rem; font-size: .8125rem; color: var(--pitb-muted); line-height: 1.45; }
     .pitb-security input[type="email"],
     .pitb-security input[type="password"],

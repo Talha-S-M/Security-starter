@@ -397,6 +397,8 @@ Optional: `passwordLabel`, `confirmationLabel`, `passwordId`, `confirmationId`, 
 
 Already included on register, reset-password, password update, and admin user-create forms.
 
+Admin user create also loads `pitb-temporary-password.js` for generate, preview, and copy-to-clipboard (`showGeneratePassword` on the password-fields partial).
+
 **Lower-level partial** (meter only, if you render inputs yourself):
 
 ```blade
@@ -432,9 +434,10 @@ Publish static assets:
 ```bash
 php artisan vendor:publish --tag=security-assets
 # → public/vendor/pitb-security/js/pitb-password-strength.js
+# → public/vendor/pitb-security/js/pitb-temporary-password.js
 ```
 
-`security:install` publishes this tag automatically. Until then, the script is served from `/security/assets/password-strength.js`.
+`security:install` publishes this tag automatically. Until then, scripts are served from `/security/assets/password-strength.js` and `/security/assets/temporary-password.js`.
 
 ## Package routes (no conflicts)
 

@@ -168,6 +168,7 @@ class SecurityServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__.'/../resources/assets/js/pitb-password-strength.js' => public_path('vendor/pitb-security/js/pitb-password-strength.js'),
+            __DIR__.'/../resources/assets/js/pitb-temporary-password.js' => public_path('vendor/pitb-security/js/pitb-temporary-password.js'),
         ], 'security-assets');
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
