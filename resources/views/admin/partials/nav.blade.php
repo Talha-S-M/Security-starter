@@ -3,7 +3,7 @@
     @include('security::admin.partials.styles')
 
     <nav class="toolbar" style="margin-bottom: 1rem;">
-        <a class="btn btn-secondary btn-sm" href="{{ route('\security') }}">Dashboard</a>
+        <a class="btn btn-secondary btn-sm" href="{{ route('/security') }}">Dashboard</a>
         @can('users.view')
             <a class="btn btn-secondary btn-sm" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.users')) }}">Users</a>
         @endcan

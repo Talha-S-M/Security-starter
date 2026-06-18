@@ -13,7 +13,7 @@
 
     <nav class="admin-nav">
         <span class="admin-nav__section">Overview</span>
-        <a href="{{ route($route('summary')) }}" class="{{ $active('summary') ? 'is-active' : '' }}">Dashboard</a>
+        <a href="{{ route('/security') }}" class="{{ $active('summary') ? 'is-active' : '' }}">Dashboard</a>
 
         @can('users.view')
             <span class="admin-nav__section">Access control</span>

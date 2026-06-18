@@ -1,8 +1,8 @@
 <aside class="sidebar">
     <h1>PITB Security</h1>
     <nav>
-        <a href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('dashboard')) }}"
-           class="{{ request()->routeIs(\Pitbphp\Security\Support\SecurityRoutes::adminName('dashboard')) ? 'active' : '' }}">
+        <a href="{{ route('/security') }}"
+           class="{{ request()->routeIs('/security') ? 'active' : '' }}">
             Dashboard
         </a>
 
