@@ -79,7 +79,7 @@ class AccessProvisioningService
         $model = config('security.user.model');
         $causer ??= Auth::user();
 
-        $user = (new $model)->newQuery()->create([
+        $attributes = [
             'name' => $payload['name'],
             'email' => $payload['email'],
             'password' => $payload['password'],
@@ -87,7 +87,20 @@ class AccessProvisioningService
             'must_change_password' => $payload['must_change_password'] ?? true,
             'password_changed_at' => $payload['password_changed_at'] ?? null,
             'mfa_configured_at' => null,
-        ]);
+        ];
+
+        foreach (['phone', 'mfa_email'] as $field) {
+            if (array_key_exists($field, $payload)) {
+                $attributes[$field] = $payload[$field];
+            }
+        }
+
+        $user = (new $model)->newQuery()->create($attributes);
+
+        if (method_exists($user, 'syncMfaMethods')) {
+            $user->syncMfaMethods();
+            $user->save();
+        }
 
         if (isset($payload['roles']) && method_exists($user, 'syncRoles')) {
             $user->syncRoles($payload['roles']);
@@ -126,8 +139,7 @@ class AccessProvisioningService
             }
         }
 
-        $scalarFields = ['is_active', 'access_expires_at', 'must_change_password', 'email', 'name'];
-        $updates = [];
+        $scalarFields = ['is_active', 'access_expires_at', 'must_change_password', 'email', 'name', 'phone', 'mfa_email'];
 
         foreach ($scalarFields as $field) {
             if (! array_key_exists($field, $payload)) {
@@ -150,11 +162,43 @@ class AccessProvisioningService
                 'from' => $old,
                 'to' => $new,
             ];
-            $updates[$field] = $new;
+            $user->{$field} = $new;
         }
 
-        if ($updates !== []) {
-            $user->update($updates);
+        if (isset($payload['password'])) {
+            $changes['password'] = [
+                'from' => '********',
+                'to' => '********',
+            ];
+            $user->password = $payload['password'];
+
+            if (array_key_exists('password_changed_at', $payload)) {
+                $user->password_changed_at = $payload['password_changed_at'];
+            }
+        }
+
+        $mfaContactsChanged = array_key_exists('phone', $changes)
+            || array_key_exists('mfa_email', $changes)
+            || array_key_exists('email', $changes);
+
+        if ($mfaContactsChanged && method_exists($user, 'syncMfaMethods')) {
+            $beforeMethods = $user->mfa_methods ?? [];
+            $user->syncMfaMethods();
+
+            if (($user->mfa_methods ?? []) != $beforeMethods) {
+                $changes['mfa_methods'] = [
+                    'from' => $beforeMethods,
+                    'to' => $user->mfa_methods ?? [],
+                ];
+            }
+        }
+
+        if (! $user->isDirty() && $changes === []) {
+            return;
+        }
+
+        if ($user->isDirty()) {
+            $user->save();
         }
 
         if ($changes === []) {

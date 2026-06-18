@@ -146,6 +146,7 @@
         const label = container.querySelector('[data-strength-label]');
         const rulesList = container.querySelector('[data-strength-rules]');
         const status = container.querySelector('[data-strength-status]');
+        const optional = container.dataset.passwordOptional === 'true';
         const form = passwordInput.closest('form');
         const submit = form ? form.querySelector('[type="submit"]') : null;
 
@@ -179,7 +180,9 @@
             }
 
             if (submit) {
-                submit.disabled = !result.valid;
+                submit.disabled = optional && passwordInput.value === ''
+                    ? false
+                    : !result.valid;
             }
 
             container.dispatchEvent(new CustomEvent('pitb-password-strength', { detail: result }));
@@ -194,7 +197,7 @@
 
         passwordInput.addEventListener('input', update);
 
-        if (submit) {
+        if (submit && !optional) {
             submit.disabled = true;
         }
 

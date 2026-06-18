@@ -222,7 +222,10 @@ class AuditChangeSummarizer
             'must_change_password' => 'Force password change',
             'email' => 'Email',
             'name' => 'Name',
-            'contact', 'phone', 'mobile' => 'Contact',
+            'phone' => 'Phone',
+            'mfa_email' => 'MFA email',
+            'mfa_methods' => 'MFA methods',
+            'contact', 'mobile' => 'Contact',
             default => ucfirst(str_replace('_', ' ', $field)),
         };
     }

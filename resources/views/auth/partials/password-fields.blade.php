@@ -8,6 +8,8 @@
     $passwordValue = $passwordValue ?? old('password');
     $confirmationValue = $confirmationValue ?? old('password_confirmation');
     $showGeneratePassword = (bool) ($showGeneratePassword ?? false);
+    $passwordRequired = (bool) ($passwordRequired ?? true);
+    $confirmationRequired = (bool) ($confirmationRequired ?? true);
 @endphp
 
 <div class="field">
@@ -31,7 +33,7 @@
         name="password"
         type="password"
         value="{{ $passwordValue }}"
-        required
+        @if ($passwordRequired) required @endif
         @if ($passwordAutocomplete) autocomplete="{{ $passwordAutocomplete }}" @endif
     >
     @if ($showGeneratePassword)
@@ -55,6 +57,7 @@
 
     @include('security::auth.partials.password-strength', [
         'passwordId' => $passwordId,
+        'passwordOptional' => ! $passwordRequired,
     ])
 </div>
 
@@ -65,7 +68,7 @@
         name="password_confirmation"
         type="password"
         value="{{ $confirmationValue }}"
-        required
+        @if ($confirmationRequired) required @endif
         @if ($confirmationAutocomplete) autocomplete="{{ $confirmationAutocomplete }}" @endif
     >
 </div>

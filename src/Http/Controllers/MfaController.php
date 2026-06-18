@@ -59,7 +59,14 @@ class MfaController extends Controller
         $user = Auth::user();
 
         if ($user) {
-            $mfa->issue($user, null, 'resend_otp');
+            $enabledMethods = config('security.mfa.methods', ['email', 'sms']);
+            $validated = $request->validate([
+                'delivery_method' => ['nullable', 'in:'.implode(',', $enabledMethods)],
+            ]);
+
+            $deliveryMethod = $mfa->preferredMethod($user, $validated['delivery_method'] ?? null);
+            $request->session()->put('security.mfa_delivery_method', $deliveryMethod);
+            $mfa->issue($user, null, 'resend_otp', $deliveryMethod);
             $request->session()->put('security.mfa_issued', true);
         }
 

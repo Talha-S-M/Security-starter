@@ -1,6 +1,7 @@
 @php
     $passwordId = $passwordId ?? 'password';
     $meterId = $meterId ?? 'pitb-password-strength-'.uniqid();
+    $passwordOptional = (bool) ($passwordOptional ?? false);
 @endphp
 
 <div
@@ -9,6 +10,7 @@
     data-password-id="{{ $passwordId }}"
     data-meter-id="{{ $meterId }}"
     data-policy='@json(\Pitbphp\Security\Support\PasswordStrength::policy())'
+    @if ($passwordOptional ?? false) data-password-optional="true" @endif
     hidden
 >
     <div class="pitb-password-strength__bar" aria-hidden="true">

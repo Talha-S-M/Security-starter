@@ -11,12 +11,19 @@ return new class extends Migration
         $table = config('security.user.table', 'users');
 
         Schema::table($table, function (Blueprint $blueprint) use ($table) {
-            if (! Schema::hasColumn($table, 'mfa_method')) {
-                $blueprint->string('mfa_method', 20)->default('email');
-            }
-
             if (! Schema::hasColumn($table, 'phone')) {
                 $blueprint->string('phone', 30)->nullable();
+            }
+
+            if (! Schema::hasColumn($table, 'mfa_methods')) {
+                $blueprint->json('mfa_methods')->nullable();
+            }
+            if (! Schema::hasColumn($table, 'mfa_email')) {
+                $blueprint->string('mfa_email')->nullable()->after('email');
+            }
+
+            if (! Schema::hasColumn($table, 'mfa_configured_at')) {
+                $blueprint->timestamp('mfa_configured_at')->nullable()->after('mfa_email');
             }
         });
     }
@@ -26,7 +33,7 @@ return new class extends Migration
         $table = config('security.user.table', 'users');
 
         Schema::table($table, function (Blueprint $blueprint) use ($table) {
-            foreach (['mfa_method', 'phone'] as $column) {
+            foreach (['phone', 'mfa_methods', 'mfa_email', 'mfa_configured_at'] as $column) {
                 if (Schema::hasColumn($table, $column)) {
                     $blueprint->dropColumn($column);
                 }

@@ -9,12 +9,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Pitbphp\Security\Notifications\MfaOtpNotification;
 use Pitbphp\Security\Notifications\MfaOtpSmsNotification;
+use Pitbphp\Security\Support\MfaContactSupport;
 use Pitbphp\Security\Support\SecurityRequest;
 
 class MfaService
 {
-    public function issue(Authenticatable $user, ?string $tokenId = null, string $sourceType = 'mfa_otp'): void
-    {
+    public function issue(
+        Authenticatable $user,
+        ?string $tokenId = null,
+        string $sourceType = 'mfa_otp',
+        ?string $method = null
+    ): void {
         $length = (int) config('security.mfa.otp_length', 6);
         $otp = $this->generateOtp($length);
 
@@ -25,24 +30,39 @@ class MfaService
         );
 
         if (method_exists($user, 'notify')) {
-            $this->sendOtp($user, $otp, $sourceType);
+            $this->sendOtp($user, $otp, $sourceType, $method);
         }
     }
 
-    public function preferredMethod(Authenticatable $user): string
+    /**
+     * @return array<int, string>
+     */
+    public function availableMethods(Authenticatable $user): array
     {
-        $method = $user->mfa_method ?? config('security.mfa.default_method', 'email');
-
-        if (! in_array($method, config('security.mfa.methods', ['email', 'sms']), true)) {
-            return config('security.mfa.default_method', 'email');
+        if (method_exists($user, 'mfaMethods')) {
+            return $user->mfaMethods();
         }
 
-        return $method;
+        return MfaContactSupport::availableMethods($user);
     }
 
-    protected function sendOtp(Authenticatable $user, string $otp, string $sourceType = 'mfa_otp'): void
+    public function preferredMethod(Authenticatable $user, ?string $preferred = null): string
     {
-        if ($this->preferredMethod($user) === 'sms') {
+        return MfaContactSupport::resolveDeliveryMethod($user, $preferred);
+    }
+
+    protected function sendOtp(
+        Authenticatable $user,
+        string $otp,
+        string $sourceType = 'mfa_otp',
+        ?string $method = null
+    ): void {
+        $method ??= $this->preferredMethod(
+            $user,
+            request()?->session()?->get('security.mfa_delivery_method')
+        );
+
+        if ($method === 'sms') {
             $user->notify(new MfaOtpSmsNotification($otp, $sourceType));
 
             return;
@@ -119,7 +139,7 @@ class MfaService
             return;
         }
 
-        request()->session()->forget(['security.mfa_verified', 'security.mfa_issued']);
+        request()->session()->forget(['security.mfa_verified', 'security.mfa_issued', 'security.mfa_delivery_method']);
     }
 
     protected function otpCacheKey(Authenticatable $user, ?string $tokenId = null): string

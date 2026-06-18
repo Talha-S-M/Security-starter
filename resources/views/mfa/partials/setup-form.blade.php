@@ -11,7 +11,16 @@
 @endif
 
 @if (($step ?? 'configure') === 'verify')
-    <p class="muted">Enter the verification code sent to your MFA contact.</p>
+    @php
+        $user = auth()->user();
+        $deliveryMethod = $deliveryMethod ?? session('security.mfa_delivery_method', $user?->mfaMethod());
+        $availableMethods = $availableMethods ?? ($user ? \Pitbphp\Security\Support\MfaContactSupport::resolveMethods($user) : []);
+    @endphp
+
+    <p class="muted">
+        Code sent via {{ ucfirst((string) $deliveryMethod) }}
+        to {{ \Pitbphp\Security\Support\MfaContactSupport::deliveryLabel($user, (string) $deliveryMethod) }}.
+    </p>
 
     <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('mfa.setup.submit')) }}">
         @csrf
@@ -24,54 +33,71 @@
 
     <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('mfa.setup.resend')) }}" style="margin-top: .75rem;">
         @csrf
+        @if (count($availableMethods) > 1)
+            <div class="field">
+                <label for="setup_delivery_method">Resend via</label>
+                <select id="setup_delivery_method" name="delivery_method">
+                    @foreach ($availableMethods as $method)
+                        <option value="{{ $method }}" @selected($deliveryMethod === $method)>
+                            {{ ucfirst($method) }}
+                            ({{ \Pitbphp\Security\Support\MfaContactSupport::deliveryLabel($user, $method) }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
         <button class="btn btn-secondary btn-block" type="submit">Resend code</button>
     </form>
 @else
+    @php
+        $enabledMethods = $enabledMethods ?? \Pitbphp\Security\Support\MfaContactSupport::enabledMethods();
+        $user = auth()->user();
+    @endphp
+
     <form method="POST" action="{{ route(\Pitbphp\Security\Support\SecurityRoutes::name('mfa.setup.submit')) }}" id="mfa-setup-form">
         @csrf
 
-        <div class="field">
-            <label for="mfa_method">MFA method</label>
-            <select id="mfa_method" name="mfa_method" required>
-                @foreach ($methods as $method)
-                    <option value="{{ $method }}" @selected(old('mfa_method', config('security.mfa.default_method', 'email')) === $method)>
-                        {{ ucfirst($method) }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        @if (in_array('email', $enabledMethods, true))
+            <div class="field">
+                <label for="mfa_email">MFA email</label>
+                <input
+                    id="mfa_email"
+                    name="mfa_email"
+                    type="email"
+                    value="{{ old('mfa_email', $user->mfa_email ?? '') }}"
+                    placeholder="Personal email for OTP delivery"
+                >
+            </div>
+        @endif
 
-        <div class="field" id="mfa-email-field">
-            <label for="mfa_email">MFA email</label>
-            <input id="mfa_email" name="mfa_email" type="email" value="{{ old('mfa_email') }}" placeholder="Personal email for OTP delivery">
-        </div>
+        @if (in_array('sms', $enabledMethods, true))
+            <div class="field">
+                <label for="phone">Phone number</label>
+                <input
+                    id="phone"
+                    name="phone"
+                    type="text"
+                    value="{{ old('phone', $user->phone ?? '') }}"
+                    placeholder="03XXXXXXXXX"
+                >
+            </div>
+        @endif
 
-        <div class="field" id="mfa-phone-field" style="display: none;">
-            <label for="phone">Phone number</label>
-            <input id="phone" name="phone" type="text" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="03XXXXXXXXX">
-        </div>
+        <p class="field-hint">Provide every contact you want to use for MFA. Enabled methods are derived from these fields.</p>
+
+        @if (count($enabledMethods) > 1)
+            <div class="field">
+                <label for="delivery_method">Send verification code via</label>
+                <select id="delivery_method" name="delivery_method">
+                    @foreach ($enabledMethods as $method)
+                        <option value="{{ $method }}" @selected(old('delivery_method', config('security.mfa.default_method', 'email')) === $method)>
+                            {{ ucfirst($method) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
 
         <button class="btn btn-primary btn-block" type="submit">Send verification code</button>
     </form>
-
-    <script>
-        (function () {
-            const method = document.getElementById('mfa_method');
-            const emailField = document.getElementById('mfa-email-field');
-            const phoneField = document.getElementById('mfa-phone-field');
-            const emailInput = document.getElementById('mfa_email');
-            const phoneInput = document.getElementById('phone');
-
-            function syncFields() {
-                const isSms = method.value === 'sms';
-                emailField.style.display = isSms ? 'none' : '';
-                phoneField.style.display = isSms ? '' : 'none';
-                emailInput.required = !isSms;
-                phoneInput.required = isSms;
-            }
-
-            method.addEventListener('change', syncFields);
-            syncFields();
-        })();
-    </script>
 @endif

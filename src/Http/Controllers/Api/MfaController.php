@@ -31,12 +31,21 @@ class MfaController extends Controller
     public function resend(Request $request, MfaService $mfa): JsonResponse
     {
         $user = Auth::user();
+        $deliveryMethod = null;
 
         if ($user) {
-            $mfa->issue($user, SecurityRequest::currentTokenId($request), 'resend_otp');
+            $enabledMethods = config('security.mfa.methods', ['email', 'sms']);
+            $validated = $request->validate([
+                'delivery_method' => ['nullable', 'in:'.implode(',', $enabledMethods)],
+            ]);
+
+            $deliveryMethod = $mfa->preferredMethod($user, $validated['delivery_method'] ?? null);
+            $mfa->issue($user, SecurityRequest::currentTokenId($request), 'resend_otp', $deliveryMethod);
         }
 
-        return SecurityResponder::apiSuccess('A new verification code has been sent.');
+        return SecurityResponder::apiSuccess('A new verification code has been sent.', [
+            'delivery_method' => $deliveryMethod,
+        ]);
     }
 
     public function status(Request $request, MfaService $mfa): JsonResponse

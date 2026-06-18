@@ -7,6 +7,53 @@
     @csrf
     @method('PUT')
 
+    @can('users.update')
+        <section class="form-section">
+            <h2 class="form-section__title">Profile</h2>
+            <p class="form-section__desc">Update the user's account identity and MFA contacts.</p>
+
+            <div class="field">
+                <label for="name">Full name</label>
+                <input id="name" name="name" type="text" value="{{ old('name', $user->name) }}" required>
+            </div>
+
+            <div class="field">
+                <label for="email">Account email</label>
+                <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required>
+            </div>
+
+            <div class="field">
+                <label for="phone">Phone number</label>
+                <input id="phone" name="phone" type="text" value="{{ old('phone', $user->phone) }}" placeholder="03XXXXXXXXX">
+                <p class="field-hint">Used for SMS MFA when a number is present.</p>
+            </div>
+
+            <div class="field">
+                <label for="mfa_email">MFA email</label>
+                <input id="mfa_email" name="mfa_email" type="email" value="{{ old('mfa_email', $user->mfa_email) }}" placeholder="Optional separate email for OTP delivery">
+            </div>
+
+            @if (! empty($user->mfa_methods))
+                <p class="field-hint">Enabled MFA methods: {{ implode(', ', $user->mfa_methods) }}</p>
+            @endif
+        </section>
+
+        <section class="form-section">
+            <h2 class="form-section__title">Password</h2>
+            <p class="form-section__desc">Leave blank to keep the current password.</p>
+
+            @include('security::auth.partials.password-fields', [
+                'passwordLabel' => 'New password',
+                'confirmationLabel' => 'Confirm new password',
+                'passwordValue' => old('password'),
+                'confirmationValue' => old('password_confirmation'),
+                'showGeneratePassword' => true,
+                'passwordRequired' => false,
+                'confirmationRequired' => false,
+            ])
+        </section>
+    @endcan
+
     @can('roles.manage')
         <section class="form-section">
             <h2 class="form-section__title">Roles</h2>
@@ -54,7 +101,7 @@
         @can('users.update')
             <div class="field" style="margin-top: 1rem; max-width: 20rem;">
                 <label for="access_expires_at">Access expires at</label>
-                <input type="date" id="access_expires_at" name="access_expires_at" value="{{ optional($user->access_expires_at)->format('Y-m-d') }}">
+                <input type="date" id="access_expires_at" name="access_expires_at" value="{{ old('access_expires_at', optional($user->access_expires_at)->format('Y-m-d')) }}">
                 <p class="field-hint">Leave empty for no expiry date.</p>
             </div>
         @endcan

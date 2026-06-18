@@ -58,7 +58,9 @@ class RequireMfa
         }
 
         if (! $request->session()->has('security.mfa_issued')) {
-            $this->mfa->issue($user);
+            $deliveryMethod = $this->mfa->preferredMethod($user);
+            $request->session()->put('security.mfa_delivery_method', $deliveryMethod);
+            $this->mfa->issue($user, null, 'mfa_otp', $deliveryMethod);
             $request->session()->put('security.mfa_issued', true);
         }
 

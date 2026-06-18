@@ -20,6 +20,16 @@
                 <input id="email" name="email" type="email" value="{{ old('email') }}" required>
             </div>
 
+            <div class="field">
+                <label for="phone">Phone number</label>
+                <input id="phone" name="phone" type="text" value="{{ old('phone') }}" placeholder="03XXXXXXXXX">
+            </div>
+
+            <div class="field">
+                <label for="mfa_email">MFA email</label>
+                <input id="mfa_email" name="mfa_email" type="email" value="{{ old('mfa_email') }}" placeholder="Optional separate email for OTP delivery">
+            </div>
+
             @include('security::auth.partials.password-fields', [
                 'passwordLabel' => 'Temporary password',
                 'passwordValue' => old('password', $suggestedPassword ?? ''),
