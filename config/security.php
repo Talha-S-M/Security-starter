@@ -264,6 +264,7 @@ return [
         'bypass_roles' => ['super-admin'],
         'approval_required_roles' => ['admin'],
         'approver_roles' => ['super-admin', 'admin'],
+        'default_temporary_password' => env('SECURITY_DEFAULT_TEMPORARY_PASSWORD'),
     ],
 
     /*

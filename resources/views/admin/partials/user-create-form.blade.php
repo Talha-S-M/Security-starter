@@ -22,6 +22,9 @@
 
             @include('security::auth.partials.password-fields', [
                 'passwordLabel' => 'Temporary password',
+                'passwordValue' => old('password', $suggestedPassword ?? ''),
+                'confirmationValue' => old('password_confirmation', $suggestedPassword ?? ''),
+                'showGeneratePassword' => true,
             ])
         </section>
 

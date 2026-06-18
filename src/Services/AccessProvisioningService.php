@@ -113,20 +113,48 @@ class AccessProvisioningService
 
         if (isset($payload['roles']) && method_exists($user, 'syncRoles')) {
             $before = method_exists($user, 'getRoleNames') ? $user->getRoleNames()->values()->all() : [];
-            $user->syncRoles($payload['roles']);
-            $changes['roles'] = [
-                'from' => $before,
-                'to' => array_values($payload['roles']),
-            ];
+            $after = array_values($payload['roles']);
+            sort($before);
+            sort($after);
+
+            if ($before !== $after) {
+                $user->syncRoles($payload['roles']);
+                $changes['roles'] = [
+                    'from' => $before,
+                    'to' => $after,
+                ];
+            }
         }
 
-        $updates = array_intersect_key($payload, array_flip([
-            'is_active', 'access_expires_at', 'must_change_password',
-        ]));
+        $scalarFields = ['is_active', 'access_expires_at', 'must_change_password', 'email', 'name'];
+        $updates = [];
+
+        foreach ($scalarFields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+
+            $new = $payload[$field];
+            $old = $user->getAttribute($field);
+
+            if ($field === 'access_expires_at') {
+                $old = $old ? \Illuminate\Support\Carbon::parse($old)->toDateString() : null;
+                $new = $new ? \Illuminate\Support\Carbon::parse($new)->toDateString() : null;
+            }
+
+            if ($old == $new) {
+                continue;
+            }
+
+            $changes[$field] = [
+                'from' => $old,
+                'to' => $new,
+            ];
+            $updates[$field] = $new;
+        }
 
         if ($updates !== []) {
             $user->update($updates);
-            $changes = array_merge($changes, $updates);
         }
 
         if ($changes === []) {

@@ -142,6 +142,9 @@
     .pitb-security label { display: block; font-weight: 600; margin: 0 0 .4rem; color: #334155; }
     .pitb-security .field { margin-bottom: 1.1rem; }
     .pitb-security .field-hint { margin: .35rem 0 0; font-size: .8125rem; color: var(--pitb-muted); font-weight: 400; }
+    .pitb-security .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .35rem; }
+    .pitb-security .field-label-row label { margin: 0; }
+    .pitb-security .audit-detail { max-width: 22rem; font-size: .8125rem; color: var(--pitb-muted); line-height: 1.45; }
     .pitb-security input[type="email"],
     .pitb-security input[type="password"],
     .pitb-security input[type="text"],

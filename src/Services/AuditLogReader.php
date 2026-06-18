@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Pitbphp\Security\Models\SecurityEvent;
 use Pitbphp\Security\Models\SecurityReview;
+use Pitbphp\Security\Support\AuditChangeSummarizer;
 use Pitbphp\Security\Support\SecurityActorPresenter;
 
 class AuditLogReader
@@ -120,6 +121,7 @@ class AuditLogReader
                 $row->causer_label = $performer
                     ? SecurityActorPresenter::label($performer)
                     : ($row->causer_name ?: ($row->causer_email ?: '—'));
+                $row->change_summary = AuditChangeSummarizer::forActivityLog($row);
 
                 return $row;
             })
@@ -166,6 +168,7 @@ class AuditLogReader
                 $row->causer_label = $performer
                     ? SecurityActorPresenter::label($performer)
                     : ($row->causer_name ?: ($row->causer_email ?: '—'));
+                $row->change_summary = AuditChangeSummarizer::forOwenItAudit($row);
 
                 return $row;
             })

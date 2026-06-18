@@ -217,10 +217,10 @@ Example iframe embed:
 | Dashboard summary | `partials/dashboard-summary.blade.php` |
 | Security events | `partials/security-events.blade.php` |
 | Event detail | `partials/security-event-detail.blade.php` |
-| Audit trail | `partials/audit-trail.blade.php` |
+| Audit trail | `partials/audit-trail.blade.php` (includes a **Details** column summarising what changed) |
 | Manual reviews | `partials/reviews.blade.php` |
 | Users table | `partials/users-table.blade.php` |
-| User create form | `partials/user-create-form.blade.php` |
+| User create form | `partials/user-create-form.blade.php` (prefills a policy-compliant temporary password; optional `SECURITY_DEFAULT_TEMPORARY_PASSWORD`) |
 | User edit form | `partials/user-form.blade.php` |
 | Roles table | `partials/roles-table.blade.php` |
 | Role edit form | `partials/role-form.blade.php` |
@@ -540,6 +540,7 @@ SECURITY_SESSION_IDLE_MINUTES=20
 SECURITY_MFA_ENABLED=false
 SECURITY_CAPTCHA_ENABLED=true
 SECURITY_ACCESS_PROVISIONING=true
+SECURITY_DEFAULT_TEMPORARY_PASSWORD=
 SECURITY_SMS_DRIVER=pitb
 SECURITY_SMS_SECRET_KEY=
 SECURITY_SMS_DISABLE_SEND=false

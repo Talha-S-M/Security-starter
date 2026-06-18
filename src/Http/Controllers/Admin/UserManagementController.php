@@ -10,6 +10,7 @@ use Illuminate\View\View;
 use Pitbphp\Security\Models\AccessRequest;
 use Pitbphp\Security\Rules\PitbPassword;
 use Pitbphp\Security\Services\AccessProvisioningService;
+use Pitbphp\Security\Support\PasswordStrength;
 use Pitbphp\Security\Support\SecurityRoutes;
 
 class UserManagementController extends Controller
@@ -44,6 +45,7 @@ class UserManagementController extends Controller
         return view('security::admin.partials.user-create-form', [
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
             'requiresApproval' => $this->provisioning->requiresApproval($request->user()),
+            'suggestedPassword' => PasswordStrength::suggestedTemporaryPassword(),
         ]);
     }
 
