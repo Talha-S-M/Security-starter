@@ -85,7 +85,7 @@ return [
     'auth' => [
         'enabled' => (bool) env('SECURITY_AUTH_ROUTES', true),
         'register' => (bool) env('SECURITY_AUTH_REGISTER', false),
-        'redirect_after_login' => env('SECURITY_AFTER_LOGIN_REDIRECT', '/'),
+        'redirect_after_login' => env('SECURITY_AFTER_LOGIN_REDIRECT', '/security'),
     ],
 
     /*

@@ -7,7 +7,9 @@
     <input type="text" name="search" placeholder="Search audit records" value="{{ $filters['search'] ?? '' }}">
     <button class="btn btn-primary" type="submit">Search</button>
 </form>
-
+@php 
+    $showId = auth()->user()->hasRole('super-admin');
+@endphp
 <div class="card">
     @if (! $logs)
         <div class="empty-state">Audit trail is not available for the current auditing driver.</div>
@@ -17,9 +19,11 @@
                 <thead>
                     <tr>
                         @if (config('security.auditing.driver') === 'auditing')
-                            <th>ID</th><th>Time</th><th>Event</th><th>Model</th><th>Details</th><th>Actor</th>
+                            @if ($showId)<th>ID</th>@endif
+                            <th>Time</th><th>Event</th><th>Model</th><th>Details</th><th>Actor</th>
                         @else
-                            <th>ID</th><th>Time</th><th>Log</th><th>Description</th><th>Details</th><th>Actor</th>
+                        @if ($showId)<th>ID</th>@endif
+                        <th>Time</th><th>Log</th><th>Description</th><th>Details</th><th>Actor</th>
                         @endif
                     </tr>
                 </thead>
@@ -27,14 +31,14 @@
                     @forelse ($logs as $row)
                         <tr>
                             @if (config('security.auditing.driver') === 'auditing')
-                                <td>{{ $row->id }}</td>
+                            @if ($showId)<td>{{ $row->id }}</td>@endif
                                 <td>{{ $row->created_at }}</td>
                                 <td>{{ $row->event }}</td>
                                 <td>{{ class_basename($row->auditable_type ?? '') }} #{{ $row->auditable_id ?? '' }}</td>
                                 <td class="audit-detail">{{ $row->change_summary ?? '—' }}</td>
                                 <td>{{ $row->causer_label ?? '—' }}</td>
                             @else
-                                <td>{{ $row->id }}</td>
+                            @if ($showId)<td>{{ $row->id }}</td>@endif
                                 <td>{{ $row->created_at }}</td>
                                 <td>{{ $row->log_name }}</td>
                                 <td>{{ $row->description }}</td>

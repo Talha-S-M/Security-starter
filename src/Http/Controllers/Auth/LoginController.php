@@ -28,6 +28,6 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(config('security.auth.redirect_after_login', '/'));
+        return redirect()->intended(config('security.auth.redirect_after_login'));
     }
 }
