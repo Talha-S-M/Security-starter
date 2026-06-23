@@ -250,7 +250,7 @@ Public self-registration is controlled by **security tier** (`SECURITY_TIER`) an
 |------|--------------|----------|-----|-------------------|
 | `strict` (default) | Off | N/A (no public sign-up) | No | Yes — admin changes need super-admin approval |
 | `moderate` | On | Yes — access request queue | No | Yes — same approval queue |
-| `lax` | On | No — instant after email OTP | Yes | No — changes apply immediately |
+| `minimal` | On | No — instant after email OTP | Yes | No — changes apply immediately |
 
 ```env
 SECURITY_TIER=moderate
@@ -260,7 +260,7 @@ SECURITY_TIER=moderate
 
 **Moderate:** anyone can request an account at `/register`; an admin or super-admin approves from the access requests queue before the user can sign in.
 
-**Lax:** users register at `/register`, receive an email OTP, verify, and are signed in immediately with the default `user` role (MFA setup on first login still applies when `SECURITY_MFA_ENABLED=true`).
+**Minimal:** users register at `/register`, receive an email OTP, verify, and are signed in immediately with the default `user` role (MFA setup on first login still applies when `SECURITY_MFA_ENABLED=true`).
 
 Choose tier at install:
 
@@ -280,7 +280,7 @@ SECURITY_AUTH_ROUTES=false
 
 ### Registration (tier-dependent)
 
-Controlled by `SECURITY_TIER` (see table above). **Moderate** and **strict** (with `SECURITY_AUTH_REGISTER=true`) create a `user_registration` access request — they do not log the user in. **Lax** uses a two-step OTP flow at `/register` → verify → auto login.
+Controlled by `SECURITY_TIER` (see table above). **Moderate** and **strict** (with `SECURITY_AUTH_REGISTER=true`) create a `user_registration` access request — they do not log the user in. **Minimal** uses a two-step OTP flow at `/register` → verify → auto login.
 
 ### First login flow (provisioned or approved users)
 
@@ -374,7 +374,7 @@ Lockout is progressive by default (`5 => 30min`, `8 => 120min`, `12 => 720min`) 
 
 ## Access provisioning (approval workflow)
 
-Active when `SECURITY_TIER` is `strict` or `moderate` (default: `strict`). **Lax tier disables the approval queue** — admin and public registration changes apply immediately.
+Active when `SECURITY_TIER` is `strict` or `moderate` (default: `strict`). **Minimal tier disables the approval queue** — admin and public registration changes apply immediately.
 
 When `security.access_provisioning.enabled` is true:
 

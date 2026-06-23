@@ -17,14 +17,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Security tier (strict / moderate / lax)
+    | Security tier (strict / moderate / minimal)
     |--------------------------------------------------------------------------
     |
     | strict   — no public registration; only super-admin/admin create users.
     |             Admin-provisioned changes require super-admin approval.
     | moderate — public registration on; new accounts need admin/super-admin
     |             approval before sign-in. Admin changes still use approval queue.
-    | lax      — public registration on with email OTP; account is active
+    | minimal      — public registration on with email OTP; account is active
     |             immediately with default (minimal) role; no approval queue.
     |
     | SECURITY_TIER is chosen at install time. Tier presets are applied once at
@@ -48,7 +48,7 @@ return [
             'registration.otp_verification' => false,
             'access_provisioning.enabled' => true,
         ],
-        'lax' => [
+        'minimal' => [
             'auth.register' => true,
             'registration.requires_approval' => false,
             'registration.otp_verification' => true,
@@ -135,7 +135,7 @@ return [
     | Public self-registration is controlled by SECURITY_TIER / SECURITY_AUTH_REGISTER.
     | strict: registration disabled unless SECURITY_AUTH_REGISTER=true (approval queue).
     | moderate: registration enabled; approval queue before sign-in.
-    | lax: registration enabled with email OTP; account is created after verification.
+    | minimal: registration enabled with email OTP; account is created after verification.
     | Provision users directly via admin partials regardless of this setting.
     |
     */

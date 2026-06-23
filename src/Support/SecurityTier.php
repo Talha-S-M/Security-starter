@@ -12,14 +12,14 @@ class SecurityTier
 
     public const MODERATE = 'moderate';
 
-    public const LAX = 'lax';
+    public const MINIMAL = 'minimal';
 
     /**
      * @return array<int, string>
      */
     public static function validTiers(): array
     {
-        return [self::STRICT, self::MODERATE, self::LAX];
+        return [self::STRICT, self::MODERATE, self::MINIMAL];
     }
 
     /**
@@ -30,7 +30,7 @@ class SecurityTier
         return [
             self::STRICT => 'Strict — only admins create users; admin changes need super-admin approval',
             self::MODERATE => 'Moderate — self-registration; new accounts need admin or super-admin approval',
-            self::LAX => 'Lax — self-registration with email OTP; minimal permissions, no approval queue',
+            self::MINIMAL => 'Minimal — self-registration with email OTP; minimal permissions, no approval queue',
         ];
     }
 
@@ -71,9 +71,9 @@ class SecurityTier
         return self::current() === self::MODERATE;
     }
 
-    public static function isLax(): bool
+    public static function isMinimal(): bool
     {
-        return self::current() === self::LAX;
+        return self::current() === self::MINIMAL;
     }
 
     public static function registrationEnabled(): bool

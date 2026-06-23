@@ -27,7 +27,7 @@ class InstallSecurityCommand extends Command
 
                             {--driver= : Auditing driver: activitylog, auditing, or none}
                             {--mode= : Security mode: web, api, or hybrid}
-                            {--tier= : Security tier: strict, moderate, or lax}
+                            {--tier= : Security tier: strict, moderate, or minimal}
 
                             {--skip-composer : Do not run composer require}
 
@@ -65,7 +65,7 @@ class InstallSecurityCommand extends Command
         $tier = $this->resolveTier();
 
         if (! in_array($tier, SecurityTier::validTiers(), true)) {
-            $this->error('Invalid tier. Use strict, moderate, or lax.');
+            $this->error('Invalid tier. Use strict, moderate, or minimal.');
 
             return self::FAILURE;
         }
