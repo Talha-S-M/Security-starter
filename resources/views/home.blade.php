@@ -65,8 +65,8 @@
                             <a class="btn btn-secondary" href="{{ route(\Pitbphp\Security\Support\SecurityRoutes::adminName('partials.summary')) }}">Summary</a>
                         @else
                             <a class="btn btn-primary" href="{{ route('login') }}">Login</a>
-                            @if (config('security.auth.register', false))
-                                <a class="btn btn-secondary" href="{{ route('register') }}">Request account</a>
+                            @if (\Pitbphp\Security\Support\SecurityTier::registrationEnabled())
+                                <a class="btn btn-secondary" href="{{ route('register') }}">Create account</a>
                             @endif
                             <a class="btn btn-secondary" href="{{ route('password.request') }}">Forgot password</a>
                         @endauth

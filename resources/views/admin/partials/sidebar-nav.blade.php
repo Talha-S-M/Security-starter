@@ -13,7 +13,7 @@
 
     <nav class="admin-nav">
         <span class="admin-nav__section">Overview</span>
-        <a href="{{ route('/security') }}" class="{{ $active('summary') ? 'is-active' : '' }}">Dashboard</a>
+        <a href="{{ route(SecurityRoutes::name('home')) }}" class="{{ $active('summary') ? 'is-active' : '' }}">Dashboard</a>
 
         @can('users.view')
             <span class="admin-nav__section">Access control</span>
@@ -38,7 +38,7 @@
     </nav>
 
     <div class="admin-sidebar__footer">
-        <a class="btn btn-secondary btn-sm" href="{{ route(SecurityRoutes::name('home')) }}">Security home</a>
+        <a class="btn btn-secondary btn-sm" href="{{ route($route('summary')) }}">Security summary</a>
         @auth
             <form method="POST" action="{{ route('logout') }}" style="margin-top: .5rem;">
                 @csrf

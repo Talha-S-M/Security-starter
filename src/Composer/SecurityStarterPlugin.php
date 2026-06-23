@@ -115,6 +115,7 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
             'security:install',
             '--driver='.$options['driver'],
             '--mode='.$options['mode'],
+            '--tier='.$options['tier'],
         ];
 
         if ($options['skip_composer']) {
@@ -144,7 +145,7 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
     }
 
     /**
-     * @return array{driver: string, mode: string, skip_composer: bool, should_seed: bool}
+     * @return array{driver: string, mode: string, tier: string, skip_composer: bool, should_seed: bool}
      */
     protected function promptInstallOptions(): array
     {
@@ -160,6 +161,15 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
             'Which runtime mode do you want to secure?',
             ['web', 'api', 'hybrid'],
             0
+        );
+
+        $tier = $this->io->select(
+            'Which security tier do you want?',
+            [
+                'strict' => 'Strict — admin approval for registration; access request workflow',
+                'lax' => 'Lax — self-registration with email OTP; no approval queue',
+            ],
+            'strict'
         );
 
         $skipComposer = false;
@@ -180,6 +190,7 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
         return [
             'driver' => (string) $driver,
             'mode' => (string) $mode,
+            'tier' => (string) $tier,
             'skip_composer' => $skipComposer,
             'should_seed' => $shouldSeed,
         ];

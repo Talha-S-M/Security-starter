@@ -17,6 +17,16 @@ class SecurityRequest
         return in_array(self::mode(), ['api', 'hybrid'], true);
     }
 
+    public static function isWebEnabled(): bool
+    {
+        return in_array(self::mode(), ['web', 'hybrid'], true);
+    }
+
+    public static function isApiOnly(): bool
+    {
+        return self::mode() === 'api';
+    }
+
     public static function isApi(Request $request): bool
     {
         if (self::mode() === 'api') {

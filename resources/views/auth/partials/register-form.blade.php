@@ -10,7 +10,15 @@
     <p class="status">{{ session('status') }}</p>
 @endif
 
-<p class="muted">Your request will be reviewed by an administrator before you can sign in.</p>
+<p class="muted">
+    @if (\Pitbphp\Security\Support\SecurityTier::registrationRequiresApproval())
+        Your request will be reviewed by an administrator before you can sign in.
+    @elseif (\Pitbphp\Security\Support\SecurityTier::registrationUsesOtp())
+        We will email you a verification code to confirm your address before creating your account.
+    @else
+        Create your account to get started.
+    @endif
+</p>
 
 <form method="POST" action="{{ route('register') }}">
     @csrf
@@ -29,7 +37,15 @@
 
     @include('security::auth.partials.captcha-field', ['captchaId' => 'pitb-register-captcha-img'])
 
-    <button class="btn btn-primary btn-block" type="submit">Submit for approval</button>
+    <button class="btn btn-primary btn-block" type="submit">
+        @if (\Pitbphp\Security\Support\SecurityTier::registrationRequiresApproval())
+            Submit for approval
+        @elseif (\Pitbphp\Security\Support\SecurityTier::registrationUsesOtp())
+            Send verification code
+        @else
+            Create account
+        @endif
+    </button>
 </form>
 
 <div class="auth-links">

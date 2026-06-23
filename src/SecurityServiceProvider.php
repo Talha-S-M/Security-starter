@@ -189,20 +189,14 @@ class SecurityServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../routes/security-api.php');
         }
 
+        if (SecurityRequest::isWebEnabled()) {
+            $this->loadViewsFrom(__DIR__.'/../resources/views', 'security');
 
+            $publishedViews = resource_path('views/vendor/security');
 
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'security');
-
-
-
-        $publishedViews = resource_path('views/vendor/security');
-
-
-
-        if (is_dir($publishedViews)) {
-
-            $this->loadViewsFrom($publishedViews, 'security');
-
+            if (is_dir($publishedViews)) {
+                $this->loadViewsFrom($publishedViews, 'security');
+            }
         }
 
 

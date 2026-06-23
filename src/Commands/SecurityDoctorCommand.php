@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
+use Pitbphp\Security\Support\SecurityRequest;
 use Pitbphp\Security\Support\SecurityRoutes;
 use Pitbphp\Security\Support\VendorConfigAligner;
 
@@ -20,10 +21,23 @@ class SecurityDoctorCommand extends Command
         $failed = false;
 
         $this->line('Running PITB Security checks...');
+        $this->line('Runtime mode: '.SecurityRequest::mode());
         $this->newLine();
 
-        $failed = ! $this->checkRoute(SecurityRoutes::name('home'), 'Main security route registered') || $failed;
-        $failed = ! $this->checkRoute(SecurityRoutes::name('mfa.verify'), 'MFA route registered') || $failed;
+        if (SecurityRequest::isWebEnabled()) {
+            $failed = ! $this->checkRoute(SecurityRoutes::name('home'), 'Main security route registered') || $failed;
+            $failed = ! $this->checkRoute(SecurityRoutes::name('mfa.verify'), 'MFA web route registered') || $failed;
+            $failed = ! $this->check(
+                is_dir(resource_path('views/vendor/security')) || is_dir(__DIR__.'/../../resources/views'),
+                'Security views available (published or package)'
+            ) || $failed;
+        }
+
+        if (SecurityRequest::isApiEnabled()) {
+            $failed = ! $this->checkRoute(SecurityRoutes::apiName('password.status'), 'API password status route registered') || $failed;
+            $failed = ! $this->checkRoute(SecurityRoutes::apiName('mfa.verify'), 'API MFA verify route registered') || $failed;
+        }
+
         $failed = ! $this->checkClass(\Spatie\Permission\Models\Role::class, 'Spatie Permission installed') || $failed;
 
         $driver = (string) config('security.auditing.driver', 'activitylog');
@@ -44,7 +58,10 @@ class SecurityDoctorCommand extends Command
         $failed = ! $this->checkTable('security_events', 'Security events table migrated') || $failed;
         $failed = ! $this->checkTable('password_histories', 'Password history table migrated') || $failed;
         $failed = ! $this->checkTable('security_reviews', 'Security reviews table migrated') || $failed;
-        $failed = ! $this->checkTable('access_requests', 'Access requests table migrated') || $failed;
+
+        if (SecurityRequest::isWebEnabled() && (bool) config('security.access_provisioning.enabled', true)) {
+            $failed = ! $this->checkTable('access_requests', 'Access requests table migrated') || $failed;
+        }
 
         $mailTo = array_filter((array) config('security.notifications.mail_to', []));
         $this->check(! empty($mailTo), 'SECURITY_MAIL_TO configured');
@@ -67,10 +84,12 @@ class SecurityDoctorCommand extends Command
             if ($driver === 'activitylog') {
                 $this->line('Missing activity_log? Run: php artisan security:publish-vendor-config --driver=activitylog && php artisan migrate');
             }
+
             return self::FAILURE;
         }
 
         $this->info('All critical security package checks passed.');
+
         return self::SUCCESS;
     }
 
@@ -96,6 +115,7 @@ class SecurityDoctorCommand extends Command
     protected function check(bool $condition, string $label): bool
     {
         $this->line(($condition ? '[OK] ' : '[FAIL] ').$label);
+
         return $condition;
     }
 }

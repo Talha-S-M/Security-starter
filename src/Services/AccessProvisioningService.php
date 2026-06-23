@@ -10,11 +10,13 @@ use Pitbphp\Security\Notifications\PendingAccessRequestNotification;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
+use Pitbphp\Security\Support\SecurityTier;
+
 class AccessProvisioningService
 {
     public function isEnabled(): bool
     {
-        return (bool) config('security.access_provisioning.enabled', true);
+        return SecurityTier::accessProvisioningEnabled();
     }
 
     public function canBypassApproval(Authenticatable $actor): bool
@@ -260,6 +262,18 @@ class AccessProvisioningService
         ]);
 
         return $request;
+    }
+
+    public function registerVerifiedUser(array $payload): Model
+    {
+        $user = $this->createUser($payload);
+
+        app(SecurityEventLogger::class)->auth('registration.completed', true, $user, [
+            'email' => $user->email ?? null,
+            'name' => $user->name ?? null,
+        ]);
+
+        return $user;
     }
 
     public function submitRegistration(array $payload): AccessRequest

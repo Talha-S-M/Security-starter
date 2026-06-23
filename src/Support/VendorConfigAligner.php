@@ -47,6 +47,8 @@ class VendorConfigAligner
         }
 
         CaptchaSupport::apply();
+        SecurityTier::apply();
+        SecurityMode::apply();
     }
 
     /**

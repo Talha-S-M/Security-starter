@@ -38,7 +38,7 @@ class RequireMfaSetup
         }
 
         return SecurityRequest::isApi($request)
-            ? SecurityResponder::mfaRequired($request)
+            ? SecurityResponder::mfaSetupRequired($request)
             : redirect()->route(SecurityRoutes::name('mfa.setup'));
     }
 }

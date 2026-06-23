@@ -29,8 +29,8 @@
 </form>
 
 <div class="auth-links">
-    @if (config('security.auth.register', false))
-        <a href="{{ route('register') }}">Request an account</a>
+    @if (\Pitbphp\Security\Support\SecurityTier::registrationEnabled())
+        <a href="{{ route('register') }}">Create account</a>
         &nbsp;|&nbsp;
     @endif
     <a href="{{ route('password.request') }}">Forgot password?</a>

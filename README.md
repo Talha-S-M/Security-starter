@@ -21,12 +21,12 @@ This will (once):
 1. Ask which auditing library to use (`activitylog`, `auditing`, or `none`)
 2. Ask which runtime mode to secure (`web`, `api`, or `hybrid`)
 3. Install the matching Composer package with a Laravel-compatible version
-4. Publish config, views, migrations, and **dependency configs** (`captcha.php`, `permission.php`, `activitylog.php` or `audit.php`)
+4. Publish config, migrations, and **dependency configs** (`captcha.php`, `permission.php`, `activitylog.php` or `audit.php`). Views and front-end assets are published only for `web` and `hybrid` — **not** for `api` mode.
 5. Publish and run auditing package migrations (`activity_log` or `audits` table)
 6. Run package and permission migrations
 7. Ask whether to seed default PITB roles and permissions
 
-Use `--driver=activitylog --mode=hybrid` to skip prompts, `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
+Use `--driver=activitylog --mode=hybrid` to skip prompts, `--mode=api` for JSON-only API apps (no Blade views), `--skip-seed` to skip RBAC seeding, or `--skip-composer` if you install auditing packages yourself.
 
 If the app has not run baseline Laravel migrations yet (for example `users` table is missing), install automatically runs `php artisan migrate` first as a fallback before package migrations.
 
@@ -59,10 +59,13 @@ Legacy vendor env keys (`CAPTCHA_DISABLE`, `ACTIVITY_LOGGER_ENABLED`, `AUDITING_
 
 Run `php artisan security:doctor` to detect legacy/env drift and then clear config cache.
 
-### Publish customizable views
+### Publish customizable views (web / hybrid only)
+
+Skip this section when `SECURITY_MODE=api` — API mode does not load or require Blade views.
 
 ```bash
 php artisan vendor:publish --tag=security-views
+```
 ```
 
 Views are copied to `resources/views/vendor/security/` where you can edit them freely.
@@ -241,13 +244,28 @@ Fresh Laravel has no auth routes — this package registers standard ones at the
 | `/forgot-password` | `password.request` |
 | `/reset-password/{token}` | `password.reset` |
 
-Public self-registration is **disabled by default**. When enabled, it still requires admin approval before the account is created.
+Public self-registration is controlled by **security tier** (`SECURITY_TIER`) and optional `SECURITY_AUTH_REGISTER`.
+
+| Tier | Registration | Approval | OTP |
+|------|--------------|----------|-----|
+| `strict` (default) | Off unless `SECURITY_AUTH_REGISTER=true` | Yes — access request queue | No |
+| `lax` | On | No — instant after email OTP | Yes |
 
 ```env
-SECURITY_AUTH_REGISTER=true
+SECURITY_TIER=lax
 ```
 
-Users can request an account at `/register`. An admin (or super-admin) approves it from the access requests queue. Approved users must change password and configure MFA on first login.
+**Strict:** users request an account at `/register`; an admin approves from the access requests queue.
+
+**Lax:** users register at `/register`, receive an email OTP, verify, and are signed in immediately (MFA setup on first login still applies when `SECURITY_MFA_ENABLED=true`).
+
+Choose tier at install:
+
+```bash
+php artisan security:install --tier=lax
+```
+
+Tier presets are applied once at boot (`SecurityTier`); feature code reads flat config keys instead of branching everywhere.
 
 Security enforcement routes (password expiry, MFA setup, MFA verify) stay under `/security/*`.
 
@@ -257,9 +275,9 @@ Disable package auth if you add Breeze/Jetstream later:
 SECURITY_AUTH_ROUTES=false
 ```
 
-### Registration (optional, approval required)
+### Registration (tier-dependent)
 
-Only active when `SECURITY_AUTH_REGISTER=true`. Submissions create a `user_registration` access request — they do not log the user in.
+Controlled by `SECURITY_TIER` (see table above). Lax mode uses a two-step OTP flow at `/register` → verify → auto login. Strict mode with `SECURITY_AUTH_REGISTER=true` creates a `user_registration` access request — it does not log the user in.
 
 ### First login flow (provisioned or approved users)
 
@@ -304,7 +322,7 @@ php artisan migrate
 
 ## CAPTCHA (login)
 
-Publish auth views and wire CAPTCHA into your login form:
+**Web / hybrid only.** Publish auth views and wire CAPTCHA into your login form:
 
 ```bash
 php artisan vendor:publish --tag=security-views
@@ -353,7 +371,9 @@ Lockout is progressive by default (`5 => 30min`, `8 => 120min`, `12 => 720min`) 
 
 ## Access provisioning (approval workflow)
 
-When `SECURITY_ACCESS_PROVISIONING=true` (default):
+Active when `SECURITY_TIER=strict` (default). **Lax tier disables the approval queue** — admin and public registration changes apply immediately.
+
+When `security.access_provisioning.enabled` is true:
 
 | Actor | Behaviour |
 |-------|-----------|
@@ -461,23 +481,26 @@ SECURITY_ROUTE_NAME_PREFIX=security.
 
 ## API / Sanctum mode (optional)
 
-By default the package runs in **web** mode (sessions). For API-first apps, enable Sanctum support:
+By default the package runs in **web** mode (sessions + Blade views). For API-first apps, enable Sanctum support:
 
 ```bash
 composer require laravel/sanctum
+php artisan security:install --mode=api
 ```
 
 ```env
-SECURITY_MODE=hybrid   # web | api | hybrid
+SECURITY_MODE=api   # web | api | hybrid
 SECURITY_API_GUARD=sanctum
 SECURITY_API_TOKEN_IDLE_MINUTES=20
 ```
 
 | Mode | Behaviour |
 |------|-----------|
-| `web` | Session middleware on `web` group only (default) |
-| `api` | Token middleware on `api` group only |
+| `web` | Session middleware on `web` group; Blade views, login/register, admin partials |
+| `api` | Token middleware on `api` group only; **JSON responses — views are not loaded or published** |
 | `hybrid` | Both — API vs web detected per request (Bearer token = API) |
+
+In **`api` mode** you do **not** need `vendor:publish --tag=security-views`. Security middleware violations (password expired, MFA required, account locked, etc.) return JSON via `SecurityResponder`. Your app owns login/registration UI and calls the security API endpoints below.
 
 ### API routes
 
@@ -485,10 +508,11 @@ SECURITY_API_TOKEN_IDLE_MINUTES=20
 |--------|-----|------------|
 | GET | `/api/security/password/status` | `security.api.password.status` |
 | POST | `/api/security/password/update` | `security.api.password.update` |
+| GET | `/api/security/mfa/status` | `security.api.mfa.status` |
 | POST | `/api/security/mfa/verify` | `security.api.mfa.verify` |
 | POST | `/api/security/mfa/resend` | `security.api.mfa.resend` |
 
-API security violations return JSON with an `error_code` (e.g. `password_expired`, `mfa_required`, `account_locked`). Tokens are revoked on account violations when `SECURITY_API_REVOKE_ON_VIOLATION=true`.
+API security violations return JSON with an `error_code` in the `Description` field (e.g. `password_expired`, `mfa_required`, `mfa_setup_required`, `account_locked`). Tokens are revoked on account violations when `SECURITY_API_REVOKE_ON_VIOLATION=true`.
 In `api` or `hybrid` mode, middleware auto-detects API requests (Bearer token, API path, API route names, or JSON expectation) and consistently returns JSON errors.
 
 ### API response envelope (optional)
@@ -536,6 +560,7 @@ curl -X POST /api/security/password/update \
 
 ```env
 SECURITY_MODE=web
+SECURITY_TIER=strict
 SECURITY_MAIL_TO=security@example.com,admin@example.com
 SECURITY_AUDIT_DRIVER=activitylog
 SECURITY_PASSWORD_EXPIRY_DAYS=90

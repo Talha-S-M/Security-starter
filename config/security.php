@@ -15,6 +15,54 @@ return [
 
     'mode' => env('SECURITY_MODE', 'web'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Security tier (strict vs lax)
+    |--------------------------------------------------------------------------
+    |
+    | strict — public registration off by default; admin approval for sign-ups
+    |           and privileged admin changes.
+    | lax    — public registration on with email OTP; no admin approval queue
+    |           for self-registration or admin provisioning.
+    |
+    | SECURITY_TIER is chosen at install time. Tier presets are applied once at
+    | boot (see SecurityTier). Individual SECURITY_* env values still override
+    | when set explicitly in .env after publish.
+    |
+    */
+
+    'tier' => env('SECURITY_TIER', 'strict'),
+
+    'tiers' => [
+        'strict' => [
+            'auth.register' => false,
+            'registration.requires_approval' => true,
+            'registration.otp_verification' => false,
+            'access_provisioning.enabled' => true,
+        ],
+        'lax' => [
+            'auth.register' => true,
+            'registration.requires_approval' => false,
+            'registration.otp_verification' => true,
+            'access_provisioning.enabled' => false,
+        ],
+    ],
+
+    'registration' => [
+        'requires_approval' => true,
+        'otp_verification' => false,
+        'otp_length' => (int) env('SECURITY_REGISTRATION_OTP_LENGTH', 6),
+        'otp_expiry_minutes' => (int) env('SECURITY_REGISTRATION_OTP_EXPIRY', 5),
+    ],
+
+    'modes' => [
+        'web' => [],
+        'api' => [
+            'admin.enabled' => false,
+        ],
+        'hybrid' => [],
+    ],
+
     'guard' => env('SECURITY_GUARD', 'web'),
 
     /*
@@ -76,8 +124,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Standard Laravel-style auth at app root (/login, /logout).
-    | Public self-registration is disabled by default (`SECURITY_AUTH_REGISTER=false`).
-    | When enabled, registrations are queued for admin approval — no instant access.
+    | Public self-registration is controlled by SECURITY_TIER / SECURITY_AUTH_REGISTER.
+    | strict: registration disabled unless SECURITY_AUTH_REGISTER=true (approval queue).
+    | lax: registration enabled with email OTP; account is created after verification.
     | Provision users directly via admin partials regardless of this setting.
     |
     */

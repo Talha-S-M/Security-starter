@@ -103,6 +103,27 @@ class SecurityResponder
         return redirect()->route(SecurityRoutes::name('mfa.verify'));
     }
 
+    public static function mfaSetupRequired(Request $request): JsonResponse|RedirectResponse
+    {
+        $message = 'MFA setup required before accessing this resource.';
+
+        if (SecurityRequest::isApi($request) || $request->expectsJson()) {
+            return self::apiError(
+                $message,
+                'mfa_setup_required',
+                403,
+                [
+                    'setup_fields' => array_values(array_filter([
+                        in_array('email', config('security.mfa.methods', ['email', 'sms']), true) ? 'mfa_email' : null,
+                        in_array('sms', config('security.mfa.methods', ['email', 'sms']), true) ? 'phone' : null,
+                    ])),
+                ]
+            );
+        }
+
+        return redirect()->route(SecurityRoutes::name('mfa.setup'));
+    }
+
     protected static function apiPayload(
         bool $success,
         int $status,

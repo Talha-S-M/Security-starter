@@ -26,6 +26,7 @@ class InstallSecurityCommand extends Command
 
                             {--driver= : Auditing driver: activitylog, auditing, or none}
                             {--mode= : Security mode: web, api, or hybrid}
+                            {--tier= : Security tier: strict or lax}
 
                             {--skip-composer : Do not run composer require}
 
@@ -60,8 +61,25 @@ class InstallSecurityCommand extends Command
 
 
 
+        $tier = $this->resolveTier();
+
+        if (! in_array($tier, ['strict', 'lax'], true)) {
+            $this->error('Invalid tier. Use strict or lax.');
+
+            return self::FAILURE;
+        }
+
+        $mode = $this->resolveMode();
+
+        if (! in_array($mode, ['web', 'api', 'hybrid'], true)) {
+            $this->error('Invalid mode. Use web, api, or hybrid.');
+
+            return self::FAILURE;
+        }
+
         $this->updateEnv('SECURITY_AUDIT_DRIVER', $driver);
-        $this->updateEnv('SECURITY_MODE', $this->resolveMode());
+        $this->updateEnv('SECURITY_MODE', $mode);
+        $this->updateEnv('SECURITY_TIER', $tier);
 
 
 
@@ -73,7 +91,7 @@ class InstallSecurityCommand extends Command
 
 
 
-        $this->publishAssets();
+        $this->publishAssets($mode);
         $this->publishVendorConfigs($driver);
         $this->publishAuditingMigrations($driver);
 
@@ -93,7 +111,13 @@ class InstallSecurityCommand extends Command
         $this->line('Add HasPitbSecurity to your User model and set SECURITY_MAIL_TO in .env.');
 
         $this->line('Default roles: super-admin, admin, manager, user, vendor.');
-        $this->line('Partial routes: /'.config('security.admin.path_prefix', 'security/admin/partials'));
+
+        if (in_array($mode, ['web', 'hybrid'], true)) {
+            $this->line('Partial routes: /'.config('security.admin.path_prefix', 'security/admin/partials'));
+        } else {
+            $this->line('API mode: security JSON endpoints under /'.trim(config('security.api.path_prefix', 'api/security'), '/'));
+            $this->line('Views were not published — API mode uses JSON responses only.');
+        }
 
         InstallMarker::write();
 
@@ -163,9 +187,33 @@ class InstallSecurityCommand extends Command
         );
     }
 
+    protected function resolveTier(): string
+    {
+        if ($tier = $this->option('tier')) {
+            return $tier;
+        }
+
+        $current = trim((string) env('SECURITY_TIER', ''));
+
+        if ($current !== '' && in_array($current, ['strict', 'lax'], true)) {
+            $this->info("Using existing SECURITY_TIER={$current}");
+
+            return $current;
+        }
+
+        return $this->choice(
+            'Which security tier do you want?',
+            [
+                'strict' => 'Strict — admin approval for registration; access request workflow',
+                'lax' => 'Lax — self-registration with email OTP; no approval queue',
+            ],
+            'strict'
+        );
+    }
 
 
-    protected function publishAssets(): void
+
+    protected function publishAssets(string $mode): void
 
     {
 
@@ -183,27 +231,31 @@ class InstallSecurityCommand extends Command
 
 
 
-        $this->call('vendor:publish', [
+        if (in_array($mode, ['web', 'hybrid'], true)) {
+            $this->call('vendor:publish', [
 
-            '--tag' => 'security-views',
+                '--tag' => 'security-views',
 
-            '--force' => $force,
+                '--force' => $force,
 
-        ]);
+            ]);
+
+            $this->call('vendor:publish', [
+
+                '--tag' => 'security-assets',
+
+                '--force' => $force,
+
+            ]);
+        } else {
+            $this->info('Skipping views and front-end assets (API-only mode).');
+        }
 
 
 
         $this->call('vendor:publish', [
 
             '--tag' => 'security-migrations',
-
-            '--force' => $force,
-
-        ]);
-
-        $this->call('vendor:publish', [
-
-            '--tag' => 'security-assets',
 
             '--force' => $force,
 
