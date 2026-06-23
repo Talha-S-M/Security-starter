@@ -3,14 +3,36 @@
 namespace Pitbphp\Security\Support;
 
 /**
- * Resolves strict vs lax security presets once at boot so feature code reads
+ * Resolves security tier presets once at boot so feature code reads
  * flat config keys instead of branching on tier everywhere.
  */
 class SecurityTier
 {
     public const STRICT = 'strict';
 
+    public const MODERATE = 'moderate';
+
     public const LAX = 'lax';
+
+    /**
+     * @return array<int, string>
+     */
+    public static function validTiers(): array
+    {
+        return [self::STRICT, self::MODERATE, self::LAX];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function installChoices(): array
+    {
+        return [
+            self::STRICT => 'Strict — only admins create users; admin changes need super-admin approval',
+            self::MODERATE => 'Moderate — self-registration; new accounts need admin or super-admin approval',
+            self::LAX => 'Lax — self-registration with email OTP; minimal permissions, no approval queue',
+        ];
+    }
 
     public static function apply(): void
     {
@@ -36,17 +58,22 @@ class SecurityTier
     {
         $tier = strtolower((string) config('security.tier', self::STRICT));
 
-        return in_array($tier, [self::STRICT, self::LAX], true) ? $tier : self::STRICT;
-    }
-
-    public static function isLax(): bool
-    {
-        return self::current() === self::LAX;
+        return in_array($tier, self::validTiers(), true) ? $tier : self::STRICT;
     }
 
     public static function isStrict(): bool
     {
         return self::current() === self::STRICT;
+    }
+
+    public static function isModerate(): bool
+    {
+        return self::current() === self::MODERATE;
+    }
+
+    public static function isLax(): bool
+    {
+        return self::current() === self::LAX;
     }
 
     public static function registrationEnabled(): bool

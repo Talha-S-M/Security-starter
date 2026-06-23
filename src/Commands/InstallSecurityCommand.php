@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\InstallMarker;
+use Pitbphp\Security\Support\SecurityTier;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
 use Symfony\Component\Process\Process;
@@ -26,7 +27,7 @@ class InstallSecurityCommand extends Command
 
                             {--driver= : Auditing driver: activitylog, auditing, or none}
                             {--mode= : Security mode: web, api, or hybrid}
-                            {--tier= : Security tier: strict or lax}
+                            {--tier= : Security tier: strict, moderate, or lax}
 
                             {--skip-composer : Do not run composer require}
 
@@ -63,8 +64,8 @@ class InstallSecurityCommand extends Command
 
         $tier = $this->resolveTier();
 
-        if (! in_array($tier, ['strict', 'lax'], true)) {
-            $this->error('Invalid tier. Use strict or lax.');
+        if (! in_array($tier, SecurityTier::validTiers(), true)) {
+            $this->error('Invalid tier. Use strict, moderate, or lax.');
 
             return self::FAILURE;
         }
@@ -195,7 +196,7 @@ class InstallSecurityCommand extends Command
 
         $current = trim((string) env('SECURITY_TIER', ''));
 
-        if ($current !== '' && in_array($current, ['strict', 'lax'], true)) {
+        if ($current !== '' && in_array($current, SecurityTier::validTiers(), true)) {
             $this->info("Using existing SECURITY_TIER={$current}");
 
             return $current;
@@ -203,11 +204,8 @@ class InstallSecurityCommand extends Command
 
         return $this->choice(
             'Which security tier do you want?',
-            [
-                'strict' => 'Strict — admin approval for registration; access request workflow',
-                'lax' => 'Lax — self-registration with email OTP; no approval queue',
-            ],
-            'strict'
+            SecurityTier::installChoices(),
+            SecurityTier::STRICT
         );
     }
 

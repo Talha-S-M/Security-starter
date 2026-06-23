@@ -12,6 +12,7 @@ use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\Script\ScriptEvents;
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\InstallMarker;
+use Pitbphp\Security\Support\SecurityTier;
 use Symfony\Component\Process\Process;
 
 class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
@@ -165,11 +166,8 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
 
         $tier = $this->io->select(
             'Which security tier do you want?',
-            [
-                'strict' => 'Strict — admin approval for registration; access request workflow',
-                'lax' => 'Lax — self-registration with email OTP; no approval queue',
-            ],
-            'strict'
+            SecurityTier::installChoices(),
+            SecurityTier::STRICT
         );
 
         $skipComposer = false;
