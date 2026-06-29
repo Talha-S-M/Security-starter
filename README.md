@@ -8,7 +8,7 @@ Laravel package implementing PITB Application Security Procedure controls.
 composer require pitbphp/security-starter
 ```
 
-After the **first** `composer require`, Composer will ask whether to run setup now (interactive terminals only). If you confirm, Composer prompts for auditing driver, runtime mode, and RBAC seeding, then runs `security:install` with those choices. Subsequent package updates will not prompt again. You can always run setup manually:
+After the **first** `composer require`, Composer will ask whether to run setup now (interactive terminals only). If you confirm, you choose auditing driver, runtime mode, and security tier once in Composer; those choices are passed to `security:install` with `--no-interaction` so you are not prompted again. Run `php artisan security:install` directly anytime for the full interactive wizard.
 
 ```bash
 php artisan security:install

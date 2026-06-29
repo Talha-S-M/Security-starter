@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\InstallMarker;
+use Pitbphp\Security\Support\InstallOptionResolver;
 use Pitbphp\Security\Support\SanctumInstaller;
 use Pitbphp\Security\Support\SecurityTier;
 use Pitbphp\Security\Support\SecurityRoutes;
@@ -50,19 +51,19 @@ class InstallSecurityCommand extends Command
 
         $driver = $this->resolveDriver();
 
-
-
-        if (! in_array($driver, ['activitylog', 'auditing', 'none'], true)) {
-
+        if (! in_array($driver, InstallOptionResolver::DRIVERS, true)) {
             $this->error('Invalid driver. Use activitylog, auditing, or none.');
 
-
-
             return self::FAILURE;
-
         }
 
+        $mode = $this->resolveMode();
 
+        if (! in_array($mode, InstallOptionResolver::MODES, true)) {
+            $this->error('Invalid mode. Use web, api, or hybrid.');
+
+            return self::FAILURE;
+        }
 
         $tier = $this->resolveTier();
 
@@ -72,12 +73,8 @@ class InstallSecurityCommand extends Command
             return self::FAILURE;
         }
 
-        $mode = $this->resolveMode();
-
-        if (! in_array($mode, ['web', 'api', 'hybrid'], true)) {
-            $this->error('Invalid mode. Use web, api, or hybrid.');
-
-            return self::FAILURE;
+        if ($this->optionsProvidedViaCli()) {
+            $this->info("Using install choices: driver={$driver}, mode={$mode}, tier={$tier}");
         }
 
         $this->updateEnv('SECURITY_AUDIT_DRIVER', $driver);
@@ -147,84 +144,94 @@ class InstallSecurityCommand extends Command
 
 
     protected function resolveDriver(): string
-
     {
+        if ($this->option('driver') !== null && $this->option('driver') !== '') {
+            $normalized = InstallOptionResolver::normalizeDriver($this->option('driver'));
 
-        if ($driver = $this->option('driver')) {
-
-            return $driver;
-
+            if ($normalized !== null) {
+                return $normalized;
+            }
         }
-
-
 
         $current = trim((string) env('SECURITY_AUDIT_DRIVER', ''));
 
+        if ($current !== '' && ($normalized = InstallOptionResolver::normalizeDriver($current)) !== null) {
+            $this->info("Using existing SECURITY_AUDIT_DRIVER={$normalized}");
 
-
-        if ($current !== '' && in_array($current, ['activitylog', 'auditing', 'none'], true)) {
-
-            $this->info("Using existing SECURITY_AUDIT_DRIVER={$current}");
-
-
-
-            return $current;
-
+            return $normalized;
         }
 
-
-
-        return $this->choice(
-
+        $selected = $this->choice(
             'Which auditing library would you like to use?',
-
-            ['activitylog', 'auditing', 'none'],
-
-            0
-
+            InstallOptionResolver::driverChoices(),
+            'activitylog'
         );
 
+        return InstallOptionResolver::normalizeSelectValue($selected, InstallOptionResolver::driverChoices())
+            ?? 'activitylog';
     }
 
     protected function resolveMode(): string
     {
-        if ($mode = $this->option('mode')) {
-            return $mode;
+        if ($this->option('mode') !== null && $this->option('mode') !== '') {
+            $normalized = InstallOptionResolver::normalizeMode($this->option('mode'));
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
         }
 
         $current = trim((string) env('SECURITY_MODE', ''));
 
-        if ($current !== '' && in_array($current, ['web', 'api', 'hybrid'], true)) {
-            $this->info("Using existing SECURITY_MODE={$current}");
-            return $current;
+        if ($current !== '' && ($normalized = InstallOptionResolver::normalizeMode($current)) !== null) {
+            $this->info("Using existing SECURITY_MODE={$normalized}");
+
+            return $normalized;
         }
 
-        return $this->choice(
+        $selected = $this->choice(
             'Which runtime mode do you want to secure?',
-            ['web', 'api', 'hybrid'],
-            0
+            InstallOptionResolver::modeChoices(),
+            'web'
         );
+
+        return InstallOptionResolver::normalizeSelectValue($selected, InstallOptionResolver::modeChoices())
+            ?? 'web';
     }
 
     protected function resolveTier(): string
     {
-        if ($tier = $this->option('tier')) {
-            return $tier;
+        if ($this->option('tier') !== null && $this->option('tier') !== '') {
+            $normalized = InstallOptionResolver::normalizeTier($this->option('tier'));
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
         }
 
         $current = trim((string) env('SECURITY_TIER', ''));
 
-        if ($current !== '' && in_array($current, SecurityTier::validTiers(), true)) {
-            $this->info("Using existing SECURITY_TIER={$current}");
+        if ($current !== '' && ($normalized = InstallOptionResolver::normalizeTier($current)) !== null) {
+            $this->info("Using existing SECURITY_TIER={$normalized}");
 
-            return $current;
+            return $normalized;
         }
 
-        return $this->choice(
+        $selected = $this->choice(
             'Which security tier do you want?',
             SecurityTier::installChoices(),
             SecurityTier::STRICT
         );
+
+        return InstallOptionResolver::normalizeSelectValue($selected, SecurityTier::installChoices())
+            ?? SecurityTier::STRICT;
+    }
+
+    protected function optionsProvidedViaCli(): bool
+    {
+        return $this->option('driver') !== null && $this->option('driver') !== ''
+            && $this->option('mode') !== null && $this->option('mode') !== ''
+            && $this->option('tier') !== null && $this->option('tier') !== '';
     }
 
 
