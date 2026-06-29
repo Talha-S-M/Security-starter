@@ -484,10 +484,9 @@ SECURITY_ROUTE_NAME_PREFIX=security.
 
 ## API / Sanctum mode (optional)
 
-By default the package runs in **web** mode (sessions + Blade views). For API-first apps, enable Sanctum support:
+For API-first apps, `security:install --mode=api` (or `hybrid`) installs **laravel/sanctum**, publishes its config/migrations, and registers token auth routes.
 
 ```bash
-composer require laravel/sanctum
 php artisan security:install --mode=api
 ```
 
@@ -495,15 +494,38 @@ php artisan security:install --mode=api
 SECURITY_MODE=api   # web | api | hybrid
 SECURITY_API_GUARD=sanctum
 SECURITY_API_TOKEN_IDLE_MINUTES=20
+SECURITY_API_AUTH_ROUTES=true
 ```
 
 | Mode | Behaviour |
 |------|-----------|
 | `web` | Session middleware on `web` group; Blade views, login/register, admin partials |
-| `api` | Token middleware on `api` group only; **JSON responses — views are not loaded or published** |
-| `hybrid` | Both — API vs web detected per request (Bearer token = API) |
+| `api` | Sanctum tokens on `api` group; **JSON only — views are not loaded or published** |
+| `hybrid` | Both — Bearer token = API; browser session = web |
 
-In **`api` mode** you do **not** need `vendor:publish --tag=security-views`. Security middleware violations (password expired, MFA required, account locked, etc.) return JSON via `SecurityResponder`. Your app owns login/registration UI and calls the security API endpoints below.
+Add `HasApiTokens` to your User model (install warns if missing):
+
+```php
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasPitbSecurity;
+}
+```
+
+### Sanctum routes
+
+| Method | URL | Route name | Purpose |
+|--------|-----|------------|---------|
+| GET | `/sanctum/csrf-cookie` | `sanctum.csrf-cookie` | Sanctum default — SPA cookie auth (hybrid) |
+| POST | `/api/login` | `security.api.login` | Email/password → Bearer token |
+| POST | `/api/logout` | `security.api.logout` | Revoke current token |
+| POST | `/api/register` | `security.api.register` | Tier-dependent registration (JSON) |
+| POST | `/api/register/verify` | `security.api.register.verify` | OTP verify (`minimal` tier) |
+| POST | `/api/register/resend` | `security.api.register.resend` | Resend registration OTP |
+
+In **`api` mode** you do **not** need `vendor:publish --tag=security-views`. Security middleware violations (password expired, MFA required, account locked, etc.) return JSON via `SecurityResponder`.
 
 ### API routes
 
@@ -547,7 +569,10 @@ Configure keys in `config/security.php`:
 ### Example API flow
 
 ```bash
-# 1. Login and receive Sanctum token (your app login route)
+# 1. Login and receive Sanctum token
+curl -X POST /api/login -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"secret","device_name":"mobile"}'
+
 # 2. If MFA enabled, verify OTP:
 curl -X POST /api/security/mfa/verify \
   -H "Authorization: Bearer {token}" \

@@ -12,6 +12,7 @@ use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\Script\ScriptEvents;
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\InstallMarker;
+use Pitbphp\Security\Support\SanctumInstaller;
 use Pitbphp\Security\Support\SecurityTier;
 use Symfony\Component\Process\Process;
 
@@ -176,6 +177,12 @@ class SecurityStarterPlugin implements PluginInterface, EventSubscriberInterface
             $package = AuditingPackageResolver::driverPackage($driver);
 
             if ($package && ! $this->io->askConfirmation("Install {$package} via Composer?", true)) {
+                $skipComposer = true;
+            }
+        }
+
+        if (in_array($mode, ['api', 'hybrid'], true) && ! SanctumInstaller::isAvailable()) {
+            if (! $this->io->askConfirmation('Install laravel/sanctum via Composer?', true)) {
                 $skipComposer = true;
             }
         }

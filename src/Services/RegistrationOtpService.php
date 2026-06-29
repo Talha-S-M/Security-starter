@@ -38,6 +38,44 @@ class RegistrationOtpService
         return true;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function storePendingPayload(string $email, array $payload): void
+    {
+        $email = $this->normalizeEmail($email);
+        $minutes = (int) config('security.registration.otp_expiry_minutes', config('security.mfa.otp_expiry_minutes', 5));
+
+        Cache::put($this->pendingPayloadKey($email), $payload, now()->addMinutes($minutes + 10));
+    }
+
+    public function hasPendingPayload(string $email): bool
+    {
+        return Cache::has($this->pendingPayloadKey($this->normalizeEmail($email)));
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function pullPendingPayload(string $email): ?array
+    {
+        $email = $this->normalizeEmail($email);
+        $payload = Cache::get($this->pendingPayloadKey($email));
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        Cache::forget($this->pendingPayloadKey($email));
+
+        return $payload;
+    }
+
+    protected function pendingPayloadKey(string $email): string
+    {
+        return 'pitb_security_registration_pending_'.$this->normalizeEmail($email);
+    }
+
     protected function cacheKey(string $email): string
     {
         return 'pitb_security_registration_otp_'.$email;

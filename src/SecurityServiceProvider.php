@@ -187,6 +187,10 @@ class SecurityServiceProvider extends ServiceProvider
 
         if (SecurityRequest::isApiEnabled()) {
             $this->loadRoutesFrom(__DIR__.'/../routes/security-api.php');
+
+            if (config('security.api.auth.enabled', true) && config('security.auth.enabled', true)) {
+                $this->loadRoutesFrom(__DIR__.'/../routes/security-api-auth.php');
+            }
         }
 
         if (SecurityRequest::isWebEnabled()) {

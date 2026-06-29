@@ -39,4 +39,11 @@ class SecurityRoutes
 
         return $path === '' ? $prefix : $prefix.'/'.ltrim($path, '/');
     }
+
+    public static function apiAuthPath(string $path = ''): string
+    {
+        $prefix = trim(config('security.api.auth.path_prefix', 'api'), '/');
+
+        return $path === '' ? $prefix : $prefix.'/'.ltrim($path, '/');
+    }
 }

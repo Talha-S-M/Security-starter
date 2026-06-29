@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
+use Pitbphp\Security\Support\SanctumInstaller;
 use Pitbphp\Security\Support\SecurityRequest;
 use Pitbphp\Security\Support\SecurityRoutes;
 use Pitbphp\Security\Support\VendorConfigAligner;
@@ -34,8 +35,13 @@ class SecurityDoctorCommand extends Command
         }
 
         if (SecurityRequest::isApiEnabled()) {
+            $failed = ! $this->checkClass(\Laravel\Sanctum\Sanctum::class, 'Laravel Sanctum installed') || $failed;
+            $failed = ! $this->checkTable('personal_access_tokens', 'Sanctum personal_access_tokens table migrated') || $failed;
+            $failed = ! $this->check(SanctumInstaller::userHasApiTokens(), 'User model uses Sanctum HasApiTokens trait') || $failed;
+            $failed = ! $this->checkRoute(SecurityRoutes::apiName('login'), 'API Sanctum login route registered') || $failed;
             $failed = ! $this->checkRoute(SecurityRoutes::apiName('password.status'), 'API password status route registered') || $failed;
             $failed = ! $this->checkRoute(SecurityRoutes::apiName('mfa.verify'), 'API MFA verify route registered') || $failed;
+            $failed = ! $this->checkRoute('sanctum.csrf-cookie', 'Sanctum CSRF cookie route registered (SPA / hybrid)') || $failed;
         }
 
         $failed = ! $this->checkClass(\Spatie\Permission\Models\Role::class, 'Spatie Permission installed') || $failed;

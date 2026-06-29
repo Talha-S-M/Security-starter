@@ -91,6 +91,11 @@ return [
         'token_idle_timeout_minutes' => (int) env('SECURITY_API_TOKEN_IDLE_MINUTES', 0),
         'token_mfa_verified_ttl_days' => (int) env('SECURITY_API_MFA_TTL_DAYS', 30),
         'revoke_token_on_violation' => (bool) env('SECURITY_API_REVOKE_ON_VIOLATION', true),
+        'auth' => [
+            'enabled' => (bool) env('SECURITY_API_AUTH_ROUTES', true),
+            'path_prefix' => env('SECURITY_API_AUTH_PATH_PREFIX', 'api'),
+            'token_name' => env('SECURITY_API_TOKEN_NAME', 'api'),
+        ],
         'allowed_route_names' => [
             'security.api.password.status',
             'security.api.password.update',

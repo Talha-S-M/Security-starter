@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Schema;
 use Pitbphp\Security\Support\AuditingPackageResolver;
 use Pitbphp\Security\Support\AuditingMigrationPublisher;
 use Pitbphp\Security\Support\InstallMarker;
+use Pitbphp\Security\Support\SanctumInstaller;
 use Pitbphp\Security\Support\SecurityTier;
+use Pitbphp\Security\Support\SecurityRoutes;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
 use Symfony\Component\Process\Process;
@@ -88,6 +90,14 @@ class InstallSecurityCommand extends Command
 
             $this->installAuditingPackage($driver);
 
+            if (in_array($mode, ['api', 'hybrid'], true)) {
+                $this->installSanctumPackage();
+            }
+
+        }
+
+        if (in_array($mode, ['api', 'hybrid'], true) && SanctumInstaller::isAvailable()) {
+            SanctumInstaller::publish($this, (bool) $this->option('force'));
         }
 
 
@@ -115,9 +125,17 @@ class InstallSecurityCommand extends Command
 
         if (in_array($mode, ['web', 'hybrid'], true)) {
             $this->line('Partial routes: /'.config('security.admin.path_prefix', 'security/admin/partials'));
-        } else {
-            $this->line('API mode: security JSON endpoints under /'.trim(config('security.api.path_prefix', 'api/security'), '/'));
-            $this->line('Views were not published — API mode uses JSON responses only.');
+        }
+
+        if (in_array($mode, ['api', 'hybrid'], true)) {
+            $this->line('Sanctum auth: POST /'.SecurityRoutes::apiAuthPath('login').' (token), GET /sanctum/csrf-cookie (SPA)');
+            $this->line('Security API: /'.trim(config('security.api.path_prefix', 'api/security'), '/'));
+            if ($mode === 'api') {
+                $this->line('Views were not published — API mode uses JSON responses only.');
+            }
+            if (! SanctumInstaller::userHasApiTokens()) {
+                $this->warn('Add Laravel\\Sanctum\\HasApiTokens to your User model for token authentication.');
+            }
         }
 
         InstallMarker::write();
@@ -489,6 +507,39 @@ class InstallSecurityCommand extends Command
 
         }
 
+    }
+
+    protected function installSanctumPackage(): void
+    {
+        if (SanctumInstaller::isAvailable()) {
+            $this->info('laravel/sanctum is already installed.');
+
+            return;
+        }
+
+        $package = SanctumInstaller::PACKAGE;
+
+        if (! $this->option('no-interaction') && ! $this->confirm("Install {$package} via Composer?", true)) {
+            $this->warn("Skipped. Run manually: composer require {$package}");
+
+            return;
+        }
+
+        $process = new Process(
+            array_merge(
+                $this->composerCommand(),
+                ['require', '--no-interaction', $package]
+            ),
+            base_path()
+        );
+
+        $process->setTimeout(600);
+
+        $process->run(fn ($type, $buffer) => $this->output->write($buffer));
+
+        if (! $process->isSuccessful()) {
+            $this->warn("Could not install automatically. Run: composer require {$package}");
+        }
     }
 
 
