@@ -127,6 +127,7 @@ class InstallSecurityCommand extends Command
         if (in_array($mode, ['api', 'hybrid'], true)) {
             $this->line('Sanctum auth: POST /'.SecurityRoutes::apiAuthPath('login').' (token), GET /sanctum/csrf-cookie (SPA)');
             $this->line('Security API: /'.trim(config('security.api.path_prefix', 'api/security'), '/'));
+            $this->line('Route reference: routes/pitb-security/README.md — run php artisan security:routes');
             if ($mode === 'api') {
                 $this->line('Views were not published — API mode uses JSON responses only.');
             }
@@ -279,6 +280,14 @@ class InstallSecurityCommand extends Command
         $this->call('vendor:publish', [
 
             '--tag' => 'security-migrations',
+
+            '--force' => $force,
+
+        ]);
+
+        $this->call('vendor:publish', [
+
+            '--tag' => 'security-routes',
 
             '--force' => $force,
 

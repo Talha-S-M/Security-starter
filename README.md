@@ -527,6 +527,26 @@ class User extends Authenticatable
 
 In **`api` mode** you do **not** need `vendor:publish --tag=security-views`. Security middleware violations (password expired, MFA required, account locked, etc.) return JSON via `SecurityResponder`.
 
+### Discover API routes
+
+After install, route files and a reference guide are published to `routes/pitb-security/`:
+
+```bash
+php artisan security:routes
+php artisan security:routes --json
+php artisan route:list --name=security
+```
+
+See `routes/pitb-security/README.md` for method/path/name tables and login examples.
+
+Publish manually anytime:
+
+```bash
+php artisan vendor:publish --tag=security-routes
+```
+
+Published route files override package defaults when present (same filenames under `routes/pitb-security/`).
+
 ### API routes
 
 | Method | URL | Route name |

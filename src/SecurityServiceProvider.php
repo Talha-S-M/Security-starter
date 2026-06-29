@@ -33,6 +33,7 @@ use Pitbphp\Security\Commands\DisableInactiveUsersCommand;
 
 use Pitbphp\Security\Commands\IntegrateWelcomeCommand;
 
+use Pitbphp\Security\Commands\ListSecurityRoutesCommand;
 use Pitbphp\Security\Commands\InstallSecurityCommand;
 
 use Pitbphp\Security\Commands\NotifyAccessReviewCommand;
@@ -76,6 +77,7 @@ use Pitbphp\Security\Services\LogSmsGateway;
 use Pitbphp\Security\Services\PitbSmsGateway;
 use Pitbphp\Security\Services\SecurityEventLogger;
 
+use Pitbphp\Security\Support\RouteLoader;
 use Pitbphp\Security\Support\SecurityRequest;
 
 
@@ -171,25 +173,34 @@ class SecurityServiceProvider extends ServiceProvider
             __DIR__.'/../resources/assets/js/pitb-temporary-password.js' => public_path('vendor/pitb-security/js/pitb-temporary-password.js'),
         ], 'security-assets');
 
+        $this->publishes([
+            __DIR__.'/../routes/security-api.php' => base_path('routes/pitb-security/security-api.php'),
+            __DIR__.'/../routes/security-api-auth.php' => base_path('routes/pitb-security/security-api-auth.php'),
+            __DIR__.'/../routes/security.php' => base_path('routes/pitb-security/security.php'),
+            __DIR__.'/../routes/security-admin.php' => base_path('routes/pitb-security/security-admin.php'),
+            __DIR__.'/../routes/auth.php' => base_path('routes/pitb-security/auth.php'),
+            __DIR__.'/../routes/pitb-security/README.md' => base_path('routes/pitb-security/README.md'),
+        ], 'security-routes');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         if (in_array(SecurityRequest::mode(), ['web', 'hybrid'], true)) {
             if (config('security.auth.enabled', true)) {
-                $this->loadRoutesFrom(__DIR__.'/../routes/auth.php');
+                $this->loadRoutesFrom(RouteLoader::path('auth.php'));
             }
 
-            $this->loadRoutesFrom(__DIR__.'/../routes/security.php');
+            $this->loadRoutesFrom(RouteLoader::path('security.php'));
 
             if (config('security.admin.enabled', true)) {
-                $this->loadRoutesFrom(__DIR__.'/../routes/security-admin.php');
+                $this->loadRoutesFrom(RouteLoader::path('security-admin.php'));
             }
         }
 
         if (SecurityRequest::isApiEnabled()) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/security-api.php');
+            $this->loadRoutesFrom(RouteLoader::path('security-api.php'));
 
             if (config('security.api.auth.enabled', true) && config('security.auth.enabled', true)) {
-                $this->loadRoutesFrom(__DIR__.'/../routes/security-api-auth.php');
+                $this->loadRoutesFrom(RouteLoader::path('security-api-auth.php'));
             }
         }
 
@@ -372,6 +383,8 @@ class SecurityServiceProvider extends ServiceProvider
         $this->commands([
 
             InstallSecurityCommand::class,
+
+            ListSecurityRoutesCommand::class,
 
             IntegrateWelcomeCommand::class,
 
