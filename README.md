@@ -539,13 +539,15 @@ php artisan route:list --name=security
 
 See `routes/pitb-security/README.md` for method/path/name tables and login examples.
 
-Publish manually anytime:
+Publish manually for your mode:
 
 ```bash
-php artisan vendor:publish --tag=security-routes
+php artisan vendor:publish --tag=security-routes-api    # api mode
+php artisan vendor:publish --tag=security-routes-web    # web mode
+php artisan vendor:publish --tag=security-routes-hybrid # hybrid mode
 ```
 
-Published route files override package defaults when present (same filenames under `routes/pitb-security/`).
+`security:install` publishes only the route files for the chosen mode. Runtime loading is also mode-aware (API routes are not registered in pure `web` mode, and vice versa).
 
 ### API routes
 

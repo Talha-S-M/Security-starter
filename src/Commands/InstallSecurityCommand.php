@@ -15,6 +15,7 @@ use Pitbphp\Security\Support\InstallMarker;
 use Pitbphp\Security\Support\InstallOptionResolver;
 use Pitbphp\Security\Support\SanctumInstaller;
 use Pitbphp\Security\Support\SecurityTier;
+use Pitbphp\Security\Support\SecurityRoutePublisher;
 use Pitbphp\Security\Support\SecurityRoutes;
 use Pitbphp\Security\Support\VendorConfigPublisher;
 
@@ -122,6 +123,9 @@ class InstallSecurityCommand extends Command
 
         if (in_array($mode, ['web', 'hybrid'], true)) {
             $this->line('Partial routes: /'.config('security.admin.path_prefix', 'security/admin/partials'));
+            if ($mode === 'web') {
+                $this->line('Route reference: routes/pitb-security/README.md — run php artisan security:routes');
+            }
         }
 
         if (in_array($mode, ['api', 'hybrid'], true)) {
@@ -285,13 +289,7 @@ class InstallSecurityCommand extends Command
 
         ]);
 
-        $this->call('vendor:publish', [
-
-            '--tag' => 'security-routes',
-
-            '--force' => $force,
-
-        ]);
+        SecurityRoutePublisher::publish($this, $mode, $force);
 
     }
 
