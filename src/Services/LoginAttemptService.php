@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Pitbphp\Security\Support\SecurityLog;
 
 class LoginAttemptService
 {
@@ -37,13 +38,11 @@ class LoginAttemptService
         if ($attempts >= $max) {
             $updates['locked_until'] = now()->addMinutes($lockMinutes);
 
-            if (class_exists(\Pitbphp\Security\Services\SecurityEventLogger::class)) {
-                app(\Pitbphp\Security\Services\SecurityEventLogger::class)->auth('auth.account_locked', false, $user, [
-                    'attempts' => $attempts,
-                    'locked_until' => $updates['locked_until']->toIso8601String(),
-                    'email' => $identifier,
-                ]);
-            }
+            SecurityLog::auth('auth.account_locked', false, $user, [
+                'attempts' => $attempts,
+                'locked_until' => $updates['locked_until']->toIso8601String(),
+                'email' => $identifier,
+            ]);
         }
 
         $this->updateUser($user, $updates);

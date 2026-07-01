@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Pitbphp\Security\Contracts\AuditLoggerInterface;
 use Pitbphp\Security\Models\AccessRequest;
 use Pitbphp\Security\Models\SecurityReview;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 
 class PruneSecurityLogsCommand extends Command
 {
@@ -15,7 +15,7 @@ class PruneSecurityLogsCommand extends Command
 
     protected $description = 'Prune audit logs older than the configured retention period';
 
-    public function handle(SecurityEventLogger $eventLogger, AuditLoggerInterface $auditLogger): int
+    public function handle(AuditLoggerInterface $auditLogger): int
     {
         $months = (int) ($this->option('months') ?: config('security.logging.retention_months', 12));
         $eventsBefore = now()->subMonths((int) config('security.logging.retention.security_events_months', $months));
@@ -23,7 +23,7 @@ class PruneSecurityLogsCommand extends Command
         $reviewsBefore = now()->subMonths((int) config('security.logging.retention.security_reviews_months', $months));
         $requestsBefore = now()->subMonths((int) config('security.logging.retention.access_requests_months', $months));
 
-        $events = $eventLogger->pruneEvents($eventsBefore);
+        $events = SecurityLog::pruneEvents($eventsBefore);
         $audits = $auditLogger->prune($auditsBefore);
         $reviews = SecurityReview::query()->where('performed_at', '<', $reviewsBefore)->delete();
         $requests = AccessRequest::query()->where('created_at', '<', $requestsBefore)->delete();

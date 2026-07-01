@@ -38,6 +38,20 @@ return new class extends Migration
             if (! Schema::hasColumn($table, 'access_expires_at')) {
                 $blueprint->timestamp('access_expires_at')->nullable();
             }
+            if (! Schema::hasColumn($table, 'phone')) {
+                $blueprint->string('phone', 30)->nullable();
+            }
+
+            if (! Schema::hasColumn($table, 'mfa_methods')) {
+                $blueprint->json('mfa_methods')->nullable();
+            }
+            if (! Schema::hasColumn($table, 'mfa_email')) {
+                $blueprint->string('mfa_email')->nullable()->after('email');
+            }
+
+            if (! Schema::hasColumn($table, 'mfa_configured_at')) {
+                $blueprint->timestamp('mfa_configured_at')->nullable()->after('mfa_email');
+            }
         });
     }
 
@@ -54,6 +68,7 @@ return new class extends Migration
                 'locked_until',
                 'last_login_at',
                 'access_expires_at',
+                'phone', 'mfa_methods', 'mfa_email', 'mfa_configured_at'
             ];
 
             foreach ($columns as $column) {

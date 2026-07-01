@@ -4,8 +4,8 @@ namespace Pitbphp\Security\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Pitbphp\Security\Services\SecurityEventLogger;
 use Pitbphp\Security\Services\SecurityNotifier;
+use Pitbphp\Security\Support\SecurityLog;
 
 class DisableInactiveUsersCommand extends Command
 {
@@ -15,7 +15,7 @@ class DisableInactiveUsersCommand extends Command
 
     protected $description = 'Disable user accounts inactive beyond the configured threshold';
 
-    public function handle(SecurityEventLogger $logger, SecurityNotifier $notifier): int
+    public function handle(SecurityNotifier $notifier): int
     {
         $days = (int) config('security.inactive_accounts.disable_after_days', 60);
         $table = config('security.user.table', 'users');
@@ -64,7 +64,7 @@ class DisableInactiveUsersCommand extends Command
         }
 
         foreach ($ids as $id) {
-            $logger->auth('account.disabled_inactivity', true, null, ['user_id' => $id, 'days' => $days]);
+            SecurityLog::auth('account.disabled_inactivity', true, null, ['user_id' => $id, 'days' => $days]);
         }
 
         $this->info('Disabled '.count($ids).' inactive account(s).');

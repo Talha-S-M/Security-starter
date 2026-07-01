@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Pitbphp\Security\Rules\PitbPassword;
 use Pitbphp\Security\Services\PasswordHistoryService;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityRoutes;
 
 class PasswordController extends Controller
@@ -25,7 +25,7 @@ class PasswordController extends Controller
         return view('security::password.update');
     }
 
-    public function update(Request $request, PasswordHistoryService $passwordHistory, SecurityEventLogger $logger): RedirectResponse
+    public function update(Request $request, PasswordHistoryService $passwordHistory): RedirectResponse
     {
         $user = Auth::user();
 
@@ -50,7 +50,7 @@ class PasswordController extends Controller
 
         $passwordHistory->record($user, $hashed);
 
-        $logger->auth('auth.password_changed', true, $user, [
+        SecurityLog::auth('auth.password_changed', true, $user, [
             'forced_change' => $forcedChange,
         ]);
 

@@ -13,7 +13,7 @@ use Pitbphp\Security\Http\Requests\SecurityRegisterRequest;
 use Pitbphp\Security\Http\Requests\SecurityRegisterVerifyRequest;
 use Pitbphp\Security\Services\AccessProvisioningService;
 use Pitbphp\Security\Services\RegistrationOtpService;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityTier;
 
 class RegisterController extends Controller
@@ -72,8 +72,7 @@ class RegisterController extends Controller
     public function verify(
         SecurityRegisterVerifyRequest $request,
         RegistrationOtpService $otp,
-        AccessProvisioningService $provisioning,
-        SecurityEventLogger $logger
+        AccessProvisioningService $provisioning
     ): RedirectResponse {
         $pending = $request->session()->get('security.registration.pending');
 
@@ -84,7 +83,7 @@ class RegisterController extends Controller
         }
 
         if (! $otp->verify((string) $pending['email'], $request->input('otp'))) {
-            $logger->auth('registration.otp_failed', false, null, [
+            SecurityLog::auth('registration.otp_failed', false, null, [
                 'email' => $pending['email'],
             ]);
 

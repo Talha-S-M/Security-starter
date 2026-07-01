@@ -643,6 +643,124 @@ php artisan security:prune-logs
 php artisan security:doctor
 ```
 
+## Security logging (app code)
+
+Log authentication, authorization, and RBAC events from controllers, services, or jobs without injecting `SecurityEventLogger` on every method.
+
+Use the `SecurityLog` helper:
+
+```php
+use Pitbphp\Security\Support\SecurityLog;
+```
+
+### Auth events → Security Events UI
+
+For login-related activity (password changes, account actions). Stored in `security_events`.
+
+```php
+// User changed their own password
+SecurityLog::auth('auth.password_changed', true, $user);
+
+// Admin reset another user's password
+SecurityLog::auth('auth.password_reset', true, $user, [
+    'admin_reset' => true,
+    'reset_by' => auth()->id(),
+]);
+```
+
+### RBAC events → Audit Trail
+
+For user/role provisioning. Stored in the audit driver (`activitylog` or `auditing`).
+
+```php
+SecurityLog::rbac('user.created', true, $user, auth()->user(), [
+    'roles' => ['admin'],
+]);
+
+SecurityLog::rbac('user.updated', true, $user, auth()->user(), [
+    'changes' => ['is_active' => ['from' => true, 'to' => false]],
+]);
+```
+
+### Authorization events → Security Events UI
+
+For access denials or policy failures.
+
+```php
+SecurityLog::authorization('authorization.denied', false, auth()->user(), [
+    'permission' => 'users.delete',
+    'target_id' => $id,
+]);
+```
+
+### Full controller example
+
+```php
+use Pitbphp\Security\Rules\PitbPassword;
+use Pitbphp\Security\Services\PasswordHistoryService;
+use Pitbphp\Security\Support\SecurityLog;
+
+public function superPasswordReset(Request $request, PasswordHistoryService $passwordHistory)
+{
+    $admin = auth('sanctum')->user();
+
+    if (! $admin->isPrivileged()) {
+        return response()->json(['message' => 'Unauthorized.'], 403);
+    }
+
+    $validated = $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'admin_password' => 'required|string',
+        'password' => ['required', 'confirmed', new PitbPassword()],
+    ]);
+
+    if (! Hash::check($validated['admin_password'], $admin->password)) {
+        return response()->json(['message' => 'Admin password is incorrect.'], 400);
+    }
+
+    $user = User::findOrFail($validated['user_id']);
+    $hashed = Hash::make($validated['password']);
+
+    $user->update([
+        'password' => $hashed,
+        'password_changed_at' => now(),
+        'must_change_password' => true,
+    ]);
+
+    $passwordHistory->record($user, $hashed);
+
+    SecurityLog::auth('auth.password_reset', true, $user, [
+        'admin_reset' => true,
+        'reset_by' => $admin->id,
+    ]);
+
+    return response()->json(['message' => 'Password reset successfully.'], 200);
+}
+```
+
+| Method | Goes to | Use for |
+|--------|---------|---------|
+| `SecurityLog::auth()` | `security_events` | Passwords, login, MFA, registration |
+| `SecurityLog::authorization()` | `security_events` | Permission/policy denials |
+| `SecurityLog::rbac()` | Audit trail | User create/update, roles, access requests |
+| `SecurityLog::recordReview()` | `security_reviews` | Manual compliance reviews (artisan commands) |
+| `SecurityLog::pruneEvents()` | — | Internal — prunes old `security_events` rows |
+
+`SecurityEventLogger` is the underlying service (singleton). Prefer `SecurityLog` in app code — do not inject `SecurityEventLogger` directly.
+
+### Artisan review commands
+
+```php
+SecurityLog::recordReview(
+    SecurityReview::TYPE_ACCESS,
+    $performer,
+    'Quarterly access review completed.',
+    ['recorded_via' => 'app']
+);
+```
+
+Or use the built-in commands: `security:record-access-review`, `security:record-log-review`, `security:record-inactive-review`.
+
 ## Auditing drivers
 
 Package events are split across two stores with **no duplication**:

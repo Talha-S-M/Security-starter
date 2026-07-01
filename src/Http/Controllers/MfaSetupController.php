@@ -8,8 +8,8 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Pitbphp\Security\Services\MfaService;
-use Pitbphp\Security\Services\SecurityEventLogger;
 use Pitbphp\Security\Support\MfaContactSupport;
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityRoutes;
 
 class MfaSetupController extends Controller
@@ -36,7 +36,7 @@ class MfaSetupController extends Controller
         ]);
     }
 
-    public function store(Request $request, MfaService $mfa, SecurityEventLogger $logger): RedirectResponse
+    public function store(Request $request, MfaService $mfa): RedirectResponse
     {
         $user = Auth::user();
 
@@ -45,7 +45,7 @@ class MfaSetupController extends Controller
         }
 
         if ($request->session()->get('mfa_setup_step') === 'verify') {
-            return $this->verifySetup($request, $mfa, $logger, $user);
+            return $this->verifySetup($request, $mfa, $user);
         }
 
         $enabledMethods = MfaContactSupport::enabledMethods();
@@ -101,7 +101,6 @@ class MfaSetupController extends Controller
     protected function verifySetup(
         Request $request,
         MfaService $mfa,
-        SecurityEventLogger $logger,
         $user
     ): RedirectResponse {
         $request->validate([
@@ -109,7 +108,7 @@ class MfaSetupController extends Controller
         ]);
 
         if (! $mfa->verify($user, $request->input('otp'))) {
-            $logger->auth('mfa.setup.failed', false, $user);
+            SecurityLog::auth('mfa.setup.failed', false, $user);
 
             return back()->withErrors(['otp' => 'Invalid or expired verification code.']);
         }
@@ -122,7 +121,7 @@ class MfaSetupController extends Controller
         $user->save();
 
         $request->session()->forget(['mfa_setup_step', 'security.mfa_delivery_method']);
-        $logger->auth('mfa.setup.completed', true, $user);
+        SecurityLog::auth('mfa.setup.completed', true, $user);
 
         return redirect()
             ->intended(config('security.routes.after_mfa_redirect', '/'))

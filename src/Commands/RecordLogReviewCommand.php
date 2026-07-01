@@ -3,19 +3,21 @@
 namespace Pitbphp\Security\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Auth;
+use Pitbphp\Security\Commands\Concerns\ResolvesSecurityReviewer;
 use Pitbphp\Security\Models\SecurityReview;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 
 class RecordLogReviewCommand extends Command
 {
+    use ResolvesSecurityReviewer;
+
     protected $signature = 'security:record-log-review
                             {--notes= : Summary of the log review performed}
                             {--user= : User ID of reviewer}';
 
     protected $description = 'Record evidence that a manual daily log review was performed';
 
-    public function handle(SecurityEventLogger $logger): int
+    public function handle(): int
     {
         $performer = $this->resolvePerformer();
 
@@ -25,7 +27,7 @@ class RecordLogReviewCommand extends Command
             return self::FAILURE;
         }
 
-        $review = $logger->recordReview(
+        $review = SecurityLog::recordReview(
             SecurityReview::TYPE_LOG,
             $performer,
             $this->option('notes'),
@@ -35,21 +37,5 @@ class RecordLogReviewCommand extends Command
         $this->info("Log review recorded (ID: {$review->id}).");
 
         return self::SUCCESS;
-    }
-
-    protected function resolvePerformer()
-    {
-        if ($userId = $this->option('user')) {
-            return $this->findUser($userId);
-        }
-
-        return Auth::user();
-    }
-
-    protected function findUser(int|string $userId)
-    {
-        $model = config('security.user.model');
-
-        return (new $model)->newQuery()->find($userId);
     }
 }

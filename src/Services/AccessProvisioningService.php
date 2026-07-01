@@ -10,6 +10,7 @@ use Pitbphp\Security\Notifications\PendingAccessRequestNotification;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityTier;
 
 class AccessProvisioningService
@@ -108,7 +109,7 @@ class AccessProvisioningService
             $user->syncRoles($payload['roles']);
         }
 
-        app(SecurityEventLogger::class)->rbac('user.created', true, $user, $causer, [
+        SecurityLog::rbac('user.created', true, $user, $causer, [
             'target' => [
                 'id' => $user->getKey(),
                 'name' => $user->name ?? null,
@@ -207,7 +208,7 @@ class AccessProvisioningService
             return;
         }
 
-        app(SecurityEventLogger::class)->rbac('user.updated', true, $user, $causer, [
+        SecurityLog::rbac('user.updated', true, $user, $causer, [
             'target' => [
                 'id' => $user->getKey(),
                 'name' => $user->name ?? null,
@@ -225,7 +226,7 @@ class AccessProvisioningService
 
         $role->syncPermissions($permissions);
 
-        app(SecurityEventLogger::class)->rbac('role.permissions.updated', true, $role, $causer, [
+        SecurityLog::rbac('role.permissions.updated', true, $role, $causer, [
             'role' => $role->name,
             'permissions_from' => $before,
             'permissions_to' => array_values($permissions),
@@ -252,7 +253,7 @@ class AccessProvisioningService
 
         $this->notifyApprovers($request);
 
-        app(SecurityEventLogger::class)->rbac('access_request.submitted', true, $requester, $requester, [
+        SecurityLog::rbac('access_request.submitted', true, $requester, $requester, [
             'request_id' => $request->id,
             'type' => $type,
             'target_type' => $targetType,
@@ -268,7 +269,7 @@ class AccessProvisioningService
     {
         $user = $this->createUser($payload);
 
-        app(SecurityEventLogger::class)->auth('registration.completed', true, $user, [
+        SecurityLog::auth('registration.completed', true, $user, [
             'email' => $user->email ?? null,
             'name' => $user->name ?? null,
         ]);
@@ -290,7 +291,7 @@ class AccessProvisioningService
 
         $this->notifyApprovers($request);
 
-        app(SecurityEventLogger::class)->auth('registration.submitted', true, null, [
+        SecurityLog::auth('registration.submitted', true, null, [
             'request_id' => $request->id,
             'target' => $this->payloadTargetSnapshot($payload),
             'email' => $payload['email'] ?? null,
@@ -324,7 +325,7 @@ class AccessProvisioningService
             'reviewed_at' => now(),
         ]);
 
-        app(SecurityEventLogger::class)->rbac('access_request.approved', true, $reviewer, $reviewer, [
+        SecurityLog::rbac('access_request.approved', true, $reviewer, $reviewer, [
             'request_id' => $request->id,
             'type' => $request->type,
             'target_type' => $request->target_type,
@@ -347,7 +348,7 @@ class AccessProvisioningService
             'reviewed_at' => now(),
         ]);
 
-        app(SecurityEventLogger::class)->rbac('access_request.rejected', true, $reviewer, $reviewer, [
+        SecurityLog::rbac('access_request.rejected', true, $reviewer, $reviewer, [
             'request_id' => $request->id,
             'type' => $request->type,
             'target_type' => $request->target_type,

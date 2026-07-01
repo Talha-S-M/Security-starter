@@ -10,13 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Pitbphp\Security\Services\LoginAttemptService;
 use Pitbphp\Security\Services\MfaService;
 use Pitbphp\Security\Services\PasswordHistoryService;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityRequest;
 
 class LogAuthenticationEvents
 {
     public function __construct(
-        protected SecurityEventLogger $logger,
         protected LoginAttemptService $loginAttempts,
         protected PasswordHistoryService $passwordHistory,
         protected MfaService $mfa
@@ -28,7 +27,7 @@ class LogAuthenticationEvents
 
         $this->updateLastLogin($event->user);
 
-        $this->logger->auth('auth.login', true, $event->user);
+        SecurityLog::auth('auth.login', true, $event->user);
 
         if (config('security.mfa.enabled')) {
             $tokenId = SecurityRequest::currentTokenId(request());
@@ -44,7 +43,7 @@ class LogAuthenticationEvents
     {
         $email = $event->credentials['email'] ?? null;
 
-        $this->logger->auth('auth.failed', false, $event->user, [
+        SecurityLog::auth('auth.failed', false, $event->user, [
             'email' => $email,
         ]);
 
@@ -59,7 +58,7 @@ class LogAuthenticationEvents
     public function handleLogout(Logout $event): void
     {
         if ($event->user) {
-            $this->logger->auth('auth.logout', true, $event->user);
+            SecurityLog::auth('auth.logout', true, $event->user);
         }
 
         request()->session()->forget(['security.mfa_verified', 'security.mfa_issued', 'security.last_activity']);
@@ -89,7 +88,7 @@ class LogAuthenticationEvents
             $this->passwordHistory->record($user, $user->password);
         }
 
-        $this->logger->auth('auth.password_reset', true, $user);
+        SecurityLog::auth('auth.password_reset', true, $user);
     }
 
     protected function updateLastLogin($user): void

@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Pitbphp\Security\Services\LoginAttemptService;
 use Pitbphp\Security\Services\MfaService;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 
 class MfaController extends Controller
 {
@@ -20,8 +20,7 @@ class MfaController extends Controller
     public function verify(
         Request $request,
         MfaService $mfa,
-        LoginAttemptService $loginAttempts,
-        SecurityEventLogger $logger
+        LoginAttemptService $loginAttempts
     ): RedirectResponse {
         $request->validate([
             'otp' => ['required', 'string', 'size:'.config('security.mfa.otp_length', 6)],
@@ -39,7 +38,7 @@ class MfaController extends Controller
 
         if (! $mfa->verify($user, $request->input('otp'))) {
             $loginAttempts->recordFailure($user);
-            $logger->auth('mfa.failed', false, $user);
+            SecurityLog::auth('mfa.failed', false, $user);
 
             if ($loginAttempts->isLocked($user)) {
                 return back()->withErrors(['otp' => 'Too many failed attempts. Your account has been locked.']);
@@ -49,7 +48,7 @@ class MfaController extends Controller
         }
 
         $loginAttempts->clear($user);
-        $logger->auth('mfa.verified', true, $user);
+        SecurityLog::auth('mfa.verified', true, $user);
 
         return redirect()->intended(config('security.routes.after_mfa_redirect', '/'));
     }

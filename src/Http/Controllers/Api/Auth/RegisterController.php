@@ -11,8 +11,8 @@ use Pitbphp\Security\Http\Requests\Api\SecurityApiRegisterRequest;
 use Pitbphp\Security\Http\Requests\Api\SecurityApiRegisterVerifyRequest;
 use Pitbphp\Security\Services\AccessProvisioningService;
 use Pitbphp\Security\Services\RegistrationOtpService;
-use Pitbphp\Security\Services\SecurityEventLogger;
 use Pitbphp\Security\Support\SanctumInstaller;
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\SecurityResponder;
 use Pitbphp\Security\Support\SecurityTier;
 
@@ -61,13 +61,12 @@ class RegisterController extends Controller
     public function verify(
         SecurityApiRegisterVerifyRequest $request,
         RegistrationOtpService $otp,
-        AccessProvisioningService $provisioning,
-        SecurityEventLogger $logger
+        AccessProvisioningService $provisioning
     ): JsonResponse {
         $email = (string) $request->input('email');
 
         if (! $otp->verify($email, $request->input('otp'))) {
-            $logger->auth('registration.otp_failed', false, null, [
+            SecurityLog::auth('registration.otp_failed', false, null, [
                 'email' => $email,
             ]);
 

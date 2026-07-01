@@ -77,6 +77,7 @@ use Pitbphp\Security\Services\LogSmsGateway;
 use Pitbphp\Security\Services\PitbSmsGateway;
 use Pitbphp\Security\Services\SecurityEventLogger;
 
+use Pitbphp\Security\Support\SecurityLog;
 use Pitbphp\Security\Support\RouteLoader;
 use Pitbphp\Security\Support\SecurityRoutePublisher;
 use Pitbphp\Security\Support\SecurityRequest;
@@ -120,6 +121,8 @@ class SecurityServiceProvider extends ServiceProvider
                 default => new PitbSmsGateway(),
             };
         });
+
+        $this->app->singleton(SecurityEventLogger::class);
 
     }
 
@@ -457,7 +460,7 @@ class SecurityServiceProvider extends ServiceProvider
 
             }
 
-            app(SecurityEventLogger::class)->authorization('authorization.denied', false, $user, [
+            SecurityLog::authorization('authorization.denied', false, $user, [
 
                 'ability' => $ability,
 

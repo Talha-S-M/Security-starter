@@ -4,7 +4,7 @@ namespace Pitbphp\Security\Listeners;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 use Spatie\Permission\Events\PermissionAttached;
 use Spatie\Permission\Events\PermissionDetached;
 use Spatie\Permission\Events\RoleAttached;
@@ -12,10 +12,6 @@ use Spatie\Permission\Events\RoleDetached;
 
 class LogAuthorizationEvents
 {
-    public function __construct(
-        protected SecurityEventLogger $logger
-    ) {}
-
     public function handleRoleAttached(RoleAttached $event): void
     {
         $this->logRbacChange('rbac.role.attached', $event->model, $event->role?->name ?? $event->roles ?? null);
@@ -59,7 +55,7 @@ class LogAuthorizationEvents
         ];
 
         if ($subject instanceof \Illuminate\Contracts\Auth\Authenticatable) {
-            $this->logger->rbac($event, true, $subject, $causer, $extra);
+            SecurityLog::rbac($event, true, $subject, $causer, $extra);
 
             return;
         }
@@ -68,6 +64,6 @@ class LogAuthorizationEvents
             $extra['role'] = $subject->name;
         }
 
-        $this->logger->rbac($event, true, $subject, $causer, $extra);
+        SecurityLog::rbac($event, true, $subject, $causer, $extra);
     }
 }

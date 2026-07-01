@@ -3,19 +3,21 @@
 namespace Pitbphp\Security\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Auth;
+use Pitbphp\Security\Commands\Concerns\ResolvesSecurityReviewer;
 use Pitbphp\Security\Models\SecurityReview;
-use Pitbphp\Security\Services\SecurityEventLogger;
+use Pitbphp\Security\Support\SecurityLog;
 
 class RecordInactiveReviewCommand extends Command
 {
+    use ResolvesSecurityReviewer;
+
     protected $signature = 'security:record-inactive-review
                             {--notes= : Summary of the inactive accounts review}
                             {--user= : User ID of reviewer}';
 
     protected $description = 'Record evidence that inactive accounts were reviewed';
 
-    public function handle(SecurityEventLogger $logger): int
+    public function handle(): int
     {
         $performer = $this->resolvePerformer();
 
@@ -25,7 +27,7 @@ class RecordInactiveReviewCommand extends Command
             return self::FAILURE;
         }
 
-        $review = $logger->recordReview(
+        $review = SecurityLog::recordReview(
             SecurityReview::TYPE_INACTIVE,
             $performer,
             $this->option('notes'),
@@ -35,21 +37,5 @@ class RecordInactiveReviewCommand extends Command
         $this->info("Inactive accounts review recorded (ID: {$review->id}).");
 
         return self::SUCCESS;
-    }
-
-    protected function resolvePerformer()
-    {
-        if ($userId = $this->option('user')) {
-            return $this->findUser($userId);
-        }
-
-        return Auth::user();
-    }
-
-    protected function findUser(int|string $userId)
-    {
-        $model = config('security.user.model');
-
-        return (new $model)->newQuery()->find($userId);
     }
 }
